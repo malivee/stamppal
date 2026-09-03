@@ -5,12 +5,6 @@
 //  Created by Muhammad Alief Rahman Fardillah on 03/09/26.
 //
 
-
-//
-//  PostcardCloudKitService.swift
-//  stamppal
-//
-
 import Foundation
 import CloudKit
 
@@ -18,8 +12,9 @@ final class PostcardCloudKitService {
 
     static let shared = PostcardCloudKitService()
 
-    private let container =
+    private var container: CKContainer {
         CKContainer.default()
+    }
 
     private var privateDatabase: CKDatabase {
         container.privateCloudDatabase
@@ -28,7 +23,6 @@ final class PostcardCloudKitService {
     private var sharedDatabase: CKDatabase {
         container.sharedCloudDatabase
     }
-
 
     // MARK: - Save Postcard
 
@@ -45,8 +39,9 @@ final class PostcardCloudKitService {
             recordID: recordID
         )
 
-        record["imageName"] =
-        postcard.imageName as! any CKRecordValue as CKRecordValue
+        if let imageName = postcard.imageName {
+            record["imageName"] = imageName as CKRecordValue
+        }
 
         record["sender"] =
             postcard.sender as CKRecordValue
@@ -61,7 +56,6 @@ final class PostcardCloudKitService {
             record
         )
     }
-
 
     // MARK: - Fetch Shared Postcards
 
@@ -85,8 +79,6 @@ final class PostcardCloudKitService {
 
             guard
                 let record = try? result.get(),
-                let imageName =
-                    record["imageName"] as? String,
                 let sender =
                     record["sender"] as? String,
                 let date =
@@ -96,6 +88,8 @@ final class PostcardCloudKitService {
             else {
                 return nil
             }
+
+            let imageName = record["imageName"] as? String
 
             guard let uuid =
                 UUID(

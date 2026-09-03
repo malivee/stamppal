@@ -13,20 +13,37 @@ struct CardView: View {
     var prefix: String = "From"
     var imageName: String? = nil
     var customImage: Image? = nil
+    var imageData: Data? = nil
     
+    // Init from Postcard model
+    init(
+        postcard: Postcard,
+        isIncoming: Bool = true
+    ) {
+        let name = isIncoming ? postcard.sender : (postcard.recipient ?? postcard.sender)
+        self.personName = name
+        self.date = postcard.date
+        self.prefix = isIncoming ? "From" : "Kepada"
+        self.imageName = postcard.imageName
+        self.imageData = postcard.imageData
+        self.customImage = nil
+    }
+
     // Convenience init with isIncoming flag
     init(
         personName: String = "Andrea Rodriguez",
         date: String = "01 August 2026",
         isIncoming: Bool = true,
         imageName: String? = nil,
-        customImage: Image? = nil
+        customImage: Image? = nil,
+        imageData: Data? = nil
     ) {
         self.personName = personName
         self.date = date
         self.prefix = isIncoming ? "From" : "Kepada"
         self.imageName = imageName
         self.customImage = customImage
+        self.imageData = imageData
     }
     
     // Custom prefix init
@@ -35,41 +52,45 @@ struct CardView: View {
         personName: String,
         date: String,
         imageName: String? = nil,
-        customImage: Image? = nil
+        customImage: Image? = nil,
+        imageData: Data? = nil
     ) {
         self.prefix = prefix
         self.personName = personName
         self.date = date
         self.imageName = imageName
         self.customImage = customImage
+        self.imageData = imageData
     }
 
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Image / Image Holder Area
             imageHolderView
-                .padding(10)
+                .padding(UIDevice.isPad ? 10 : 7)
             
             // MARK: - Footer Info (Sender/Recipient & Date)
             HStack(alignment: .center) {
                 Text("\(prefix) : \(personName)")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: UIDevice.isPad ? 13 : 11, weight: .bold))
                     .foregroundColor(Color(red: 0.12, green: 0.14, blue: 0.18))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
                 
                 Text(date)
-                    .font(.system(size: 10, weight: .regular))
+                    .font(.system(size: UIDevice.isPad ? 10 : 8.5, weight: .regular))
                     .foregroundColor(Color(red: 0.50, green: 0.53, blue: 0.58))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, UIDevice.isPad ? 14 : 10)
             .padding(.top, 2)
-            .padding(.bottom, 14)
+            .padding(.bottom, UIDevice.isPad ? 14 : 9)
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: UIDevice.isPad ? 14 : 10, style: .continuous))
         .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
     }
     
@@ -78,6 +99,11 @@ struct CardView: View {
     private var imageHolderView: some View {
         if let customImage = customImage {
             customImage
+                .resizable()
+                .aspectRatio(1.6, contentMode: .fill)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        } else if let imageData = imageData, let uiImage = UIImage(data: imageData) {
+            Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(1.6, contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

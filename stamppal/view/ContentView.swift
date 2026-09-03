@@ -1,9 +1,19 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var internalTab: Int = 0
+    private var externalTab: Binding<Int>?
+    
+    init(selectedTab: Binding<Int>? = nil) {
+        self.externalTab = selectedTab
+    }
+    
+    private var activeTabBinding: Binding<Int> {
+        externalTab ?? $internalTab
+    }
 
     var body: some View {
-        TabView {
+        TabView(selection: activeTabBinding) {
 
             // MARK: - Home
             HomeView()
@@ -13,6 +23,7 @@ struct ContentView: View {
                         systemImage: "house.fill"
                     )
                 }
+                .tag(0)
 
             // MARK: - Camera
             CameraView()
@@ -22,6 +33,7 @@ struct ContentView: View {
                         systemImage: "pencil"
                     )
                 }
+                .tag(1)
 
 
             // MARK: - Inbox
@@ -32,6 +44,7 @@ struct ContentView: View {
                         systemImage: "tray.fill"
                     )
                 }
+                .tag(2)
 
             // MARK: - Profile
             ProfileView()
@@ -41,6 +54,7 @@ struct ContentView: View {
                         systemImage: "person.fill"
                     )
                 }
+                .tag(3)
         }
     }
 }

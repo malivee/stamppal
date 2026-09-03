@@ -16,7 +16,7 @@ struct PostcardView: View {
 
     // The image determines the postcard's main size.
     private let imageAspectRatio: CGFloat = 1.2
-    private let footerHeight: CGFloat = 72
+    private var footerHeight: CGFloat { UIDevice.isPad ? 72 : 46 }
 
     var body: some View {
 
@@ -60,7 +60,7 @@ struct PostcardView: View {
             )
             .contentShape(
                 RoundedRectangle(
-                    cornerRadius: 14,
+                    cornerRadius: UIDevice.isPad ? 14 : 10,
                     style: .continuous
                 )
             )
@@ -122,26 +122,28 @@ struct PostcardView: View {
                 Text("From : \(postcard.sender)")
                     .font(
                         .system(
-                            size: 22,
+                            size: UIDevice.isPad ? 22 : 14,
                             weight: .medium
                         )
                     )
                     .foregroundStyle(.black)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Spacer()
 
                 Text(postcard.date)
                     .font(
                         .system(
-                            size: 18,
+                            size: UIDevice.isPad ? 18 : 12,
                             weight: .regular
                         )
                     )
                     .foregroundStyle(.gray)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, UIDevice.isPad ? 28 : 14)
             .frame(
                 height: footerHeight
             )
@@ -149,15 +151,15 @@ struct PostcardView: View {
         .background(.white)
         .clipShape(
             RoundedRectangle(
-                cornerRadius: 14,
+                cornerRadius: UIDevice.isPad ? 14 : 10,
                 style: .continuous
             )
         )
         .shadow(
             color: .black.opacity(0.20),
-            radius: 12,
+            radius: UIDevice.isPad ? 12 : 8,
             x: 0,
-            y: 7
+            y: UIDevice.isPad ? 7 : 4
         )
     }
 
@@ -181,26 +183,30 @@ struct PostcardView: View {
                 // Sender information
                 VStack(
                     alignment: .leading,
-                    spacing: 4
+                    spacing: UIDevice.isPad ? 4 : 2
                 ) {
 
                     Text("From : \(postcard.sender)")
                         .font(
                             .system(
-                                size: 22,
+                                size: UIDevice.isPad ? 22 : 14,
                                 weight: .medium
                             )
                         )
                         .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
                     Text(postcard.date)
                         .font(
                             .system(
-                                size: 18,
+                                size: UIDevice.isPad ? 18 : 11,
                                 weight: .regular
                             )
                         )
                         .foregroundStyle(.gray)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
 
                 Spacer()
@@ -214,8 +220,8 @@ struct PostcardView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(
-                            width: 105,
-                            height: 105
+                            width: UIDevice.isPad ? 105 : 64,
+                            height: UIDevice.isPad ? 105 : 64
                         )
                         .clipped()
                         .overlay(
@@ -243,7 +249,7 @@ struct PostcardView: View {
                         Text("Prangko")
                             .font(
                                 .system(
-                                    size: 17,
+                                    size: UIDevice.isPad ? 17 : 11,
                                     weight: .regular
                                 )
                             )
@@ -256,8 +262,8 @@ struct PostcardView: View {
                             )
                     }
                     .frame(
-                        width: 105,
-                        height: 105
+                        width: UIDevice.isPad ? 105 : 64,
+                        height: UIDevice.isPad ? 105 : 64
                     )
                     .overlay(
                         Rectangle()
@@ -268,8 +274,8 @@ struct PostcardView: View {
                     )
                 }
             }
-            .padding(.top, 22)
-            .padding(.horizontal, 48)
+            .padding(.top, UIDevice.isPad ? 22 : 12)
+            .padding(.horizontal, UIDevice.isPad ? 48 : 18)
 
             Spacer()
 
@@ -278,19 +284,20 @@ struct PostcardView: View {
             Text(postcard.message)
                 .font(
                     .system(
-                        size: 22,
+                        size: UIDevice.isPad ? 22 : 13,
                         weight: .regular
                     )
                 )
                 .italic()
                 .foregroundStyle(.black)
-                .lineSpacing(5)
+                .lineSpacing(UIDevice.isPad ? 5 : 2)
                 .multilineTextAlignment(.leading)
-                .padding(.horizontal, 48)
+                .padding(.horizontal, UIDevice.isPad ? 48 : 18)
                 .frame(
                     maxWidth: .infinity,
                     alignment: .leading
                 )
+                .minimumScaleFactor(0.8)
 
             Spacer()
 
@@ -303,13 +310,13 @@ struct PostcardView: View {
                 Text("Ketuk untuk melihat gambar")
                     .font(
                         .system(
-                            size: 17,
+                            size: UIDevice.isPad ? 17 : 11,
                             weight: .medium
                         )
                     )
                     .foregroundStyle(.blue)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, UIDevice.isPad ? 20 : 12)
+                    .padding(.vertical, UIDevice.isPad ? 10 : 6)
                     .background(
                         Capsule()
                             .fill(
@@ -319,7 +326,7 @@ struct PostcardView: View {
 
                 Spacer()
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, UIDevice.isPad ? 20 : 10)
         }
         .frame(
             maxWidth: .infinity,

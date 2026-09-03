@@ -13,6 +13,7 @@ struct HomeView: View {
 
     // MARK: - Postcards from SwiftData
 
+    @Environment(\.modelContext) private var modelContext
     @Query(
         sort: \Postcard.id,
         order: .reverse
@@ -80,6 +81,31 @@ struct HomeView: View {
         }
         .ignoresSafeArea()
         .navigationBarBackButtonHidden()
+        .task {
+            await syncGroupPostcards()
+        }
+        .refreshable {
+            await syncGroupPostcards()
+        }
+    }
+
+    // MARK: - Sync Group Postcards
+    private func syncGroupPostcards() async {
+        guard let groupCode = AuthenticationManager.shared.activeGroupCode, !groupCode.isEmpty else { return }
+        do {
+            let remoteCards = try await CloudKitGroupService.shared.fetchGroupPostcards(groupCode: groupCode)
+            await MainActor.run {
+                for card in remoteCards {
+                    let exists = postcards.contains(where: { $0.id == card.id })
+                    if !exists {
+                        modelContext.insert(card)
+                    }
+                }
+                try? modelContext.save()
+            }
+        } catch {
+            print("ℹ️ Sync group postcards: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Empty State
@@ -111,13 +137,15 @@ struct HomeView: View {
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
         }
-        .padding(280)
+        .padding(.horizontal, UIDevice.isPad ? 80 : 32)
+        .padding(.vertical, UIDevice.isPad ? 80 : 36)
+        .frame(maxWidth: UIDevice.isPad ? 500 : 320)
         .background {
             Color.white
         }
-        .clipShape(RoundedRectangle(cornerRadius: 30))
-        .padding(.horizontal, 40)
-        .shadow(radius: 20)
+        .clipShape(RoundedRectangle(cornerRadius: UIDevice.isPad ? 30 : 20))
+        .padding(.horizontal, UIDevice.isPad ? 40 : 20)
+        .shadow(radius: 16)
     }
 
     // MARK: - Actions

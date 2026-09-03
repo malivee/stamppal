@@ -106,7 +106,8 @@ struct PostcardStack: View {
         
         .offset(
             y: verticalOffset(
-                for: position
+                for: position,
+                geometry: geometry
             )
         )
         
@@ -152,9 +153,10 @@ struct PostcardStack: View {
     private func cardWidth(
         geometry: GeometryProxy
     ) -> CGFloat {
-        
+        let isWide = geometry.size.width > 600
+        let ratio: CGFloat = isWide ? 0.54 : 0.85
         return min(
-            geometry.size.width * 0.52,
+            geometry.size.width * ratio,
             700
         )
     }
@@ -162,22 +164,25 @@ struct PostcardStack: View {
     // MARK: - Vertical Position
     
     private func verticalOffset(
-        for position: Int
+        for position: Int,
+        geometry: GeometryProxy
     ) -> CGFloat {
+        let isSmallHeight = geometry.size.height < 500
+        let scale: CGFloat = isSmallHeight ? 0.65 : (UIDevice.isPad ? 1.0 : 0.80)
         
         switch position {
             
         case 0:
-            return -35
+            return -35 * scale
             
         case 1:
-            return 35
+            return 35 * scale
             
         case 2:
-            return 105
+            return 105 * scale
             
         default:
-            return 170
+            return 170 * scale
         }
     }
     
