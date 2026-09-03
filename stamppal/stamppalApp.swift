@@ -6,12 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct stamppalApp: App {
+
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(
+            for: Postcard.self
+        )
     }
 }
