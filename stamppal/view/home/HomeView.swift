@@ -97,8 +97,7 @@ struct HomeView: View {
                         HStack {
 
                             CircleIconButton(
-                                systemImage: "archivebox.fill",
-                                size: 68
+                                icon: "archivebox.fill"
                             ) {
                                 archiveTapped()
                             }
@@ -106,8 +105,7 @@ struct HomeView: View {
                             Spacer()
 
                             CircleIconButton(
-                                systemImage: "questionmark",
-                                size: 68
+                                icon: "questionmark"
                             ) {
                                 helpTapped()
                             }
