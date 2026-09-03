@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import FoundationModels
 
 struct WritePostcardView: View {
 
@@ -7,20 +8,33 @@ struct WritePostcardView: View {
 
     @State private var selectedImage: UIImage?
 
+    @State private var aiUnavailableMessage: String?
+
     // MARK: - Text
 
     @State private var recipient = "Andrea Rodriguez"
+
     @State private var message = ""
+
+    // MARK: - Stamp
+
+    @State private var generatedStamp: UIImage?
+
+    @State private var isGeneratingStamp = false
+
+    @State private var stampError: String?
 
     // MARK: - Navigation
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)
+    private var dismiss
 
     @State private var isCameraPresented = false
 
     // MARK: - Initializer
 
     init(image: UIImage? = nil) {
+
         _selectedImage = State(
             initialValue: image
         )
@@ -61,10 +75,12 @@ struct WritePostcardView: View {
                 .padding(.horizontal, 42)
             }
         }
+
         .ignoresSafeArea()
+
         .navigationBarBackButtonHidden()
 
-        // MARK: Camera Presentation
+        // MARK: Camera
 
         .fullScreenCover(
             isPresented: $isCameraPresented
@@ -72,13 +88,69 @@ struct WritePostcardView: View {
 
             CameraViewControllerWrapper { image in
 
-                // Receive captured image
                 selectedImage = image
 
-                // Close camera
                 isCameraPresented = false
             }
             .ignoresSafeArea()
+        }
+
+        // MARK: AI Error Alert
+
+        .alert(
+            "AI Tidak Tersedia",
+            isPresented: Binding(
+                get: {
+                    aiUnavailableMessage != nil
+                },
+                set: { newValue in
+
+                    if !newValue {
+                        aiUnavailableMessage = nil
+                    }
+                }
+            )
+        ) {
+
+            Button("OK") {
+                aiUnavailableMessage = nil
+            }
+
+        } message: {
+
+            Text(
+                aiUnavailableMessage
+                ?? "Terjadi kesalahan."
+            )
+        }
+
+        // MARK: Stamp Error Alert
+
+        .alert(
+            "Gagal Membuat Prangko",
+            isPresented: Binding(
+                get: {
+                    stampError != nil
+                },
+                set: { newValue in
+
+                    if !newValue {
+                        stampError = nil
+                    }
+                }
+            )
+        ) {
+
+            Button("OK") {
+                stampError = nil
+            }
+
+        } message: {
+
+            Text(
+                stampError
+                ?? "Terjadi kesalahan saat membuat prangko."
+            )
         }
     }
 
@@ -112,7 +184,9 @@ struct WritePostcardView: View {
                     location: 1
                 )
             ],
+
             startPoint: .top,
+
             endPoint: .bottom
         )
         .ignoresSafeArea()
@@ -124,45 +198,43 @@ struct WritePostcardView: View {
 
         HStack {
 
-            // Home Button
-
             Button {
 
                 dismiss()
 
             } label: {
 
-                Image(systemName: "house.fill")
-                    .font(
-                        .system(
-                            size: 30,
-                            weight: .medium
+                Image(
+                    systemName: "house.fill"
+                )
+                .font(
+                    .system(
+                        size: 30,
+                        weight: .medium
+                    )
+                )
+                .foregroundStyle(.black)
+                .frame(
+                    width: 68,
+                    height: 68
+                )
+                .background(
+                    Circle()
+                        .fill(
+                            .white.opacity(0.45)
                         )
-                    )
-                    .foregroundStyle(.black)
-                    .frame(
-                        width: 68,
-                        height: 68
-                    )
-                    .background(
-                        Circle()
-                            .fill(
-                                .white.opacity(0.45)
-                            )
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                .white.opacity(0.7),
-                                lineWidth: 1
-                            )
-                    )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            .white.opacity(0.7),
+                            lineWidth: 1
+                        )
+                )
             }
             .buttonStyle(.plain)
 
             Spacer()
-
-            // Title
 
             VStack(spacing: 2) {
 
@@ -188,8 +260,6 @@ struct WritePostcardView: View {
             }
 
             Spacer()
-
-            // Help Button
 
             Button {
 
@@ -241,15 +311,19 @@ struct WritePostcardView: View {
 
                 if let selectedImage {
 
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .scaledToFill()
+                    Image(
+                        uiImage: selectedImage
+                    )
+                    .resizable()
+                    .scaledToFill()
 
                 } else {
 
-                    Image("placeholderImage")
-                        .resizable()
-                        .scaledToFill()
+                    Image(
+                        "placeholderImage"
+                    )
+                    .resizable()
+                    .scaledToFill()
                 }
             }
             .frame(
@@ -347,38 +421,144 @@ struct WritePostcardView: View {
 
                     Spacer()
 
-                    // MARK: Stamp
+                    // MARK: AI Stamp
 
-                    ZStack {
+                    VStack(spacing: 8) {
 
-                        Rectangle()
-                            .fill(
-                                Color(
-                                    red: 0.76,
-                                    green: 0.76,
-                                    blue: 0.79
+                        ZStack {
+
+                            if let generatedStamp {
+
+                                Image(
+                                    uiImage: generatedStamp
                                 )
-                            )
+                                .resizable()
+                                .scaledToFill()
+                                .clipped()
 
-                        Text("Prangko")
+                            } else {
+
+                                Rectangle()
+                                    .fill(
+                                        Color(
+                                            red: 0.76,
+                                            green: 0.76,
+                                            blue: 0.79
+                                        )
+                                    )
+
+                                Text("Prangko")
+                                    .font(
+                                        .system(
+                                            size: 23,
+                                            weight: .regular
+                                        )
+                                    )
+                                    .foregroundStyle(
+                                        Color(
+                                            red: 0.40,
+                                            green: 0.40,
+                                            blue: 0.42
+                                        )
+                                    )
+                            }
+
+                            // Loading overlay
+
+                            if isGeneratingStamp {
+
+                                Rectangle()
+                                    .fill(
+                                        .black.opacity(0.35)
+                                    )
+
+                                VStack(spacing: 8) {
+
+                                    ProgressView()
+                                        .tint(.white)
+                                        .scaleEffect(1.2)
+
+                                    Text("Membuat...")
+                                        .font(
+                                            .system(
+                                                size: 14,
+                                                weight: .medium
+                                            )
+                                        )
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                        }
+                        .frame(
+                            width: 125,
+                            height: 125
+                        )
+                        .clipShape(Rectangle())
+
+                        Button {
+
+                            generateStamp()
+
+                        } label: {
+
+                            HStack(spacing: 6) {
+
+                                if isGeneratingStamp {
+
+                                    ProgressView()
+                                        .tint(.white)
+
+                                } else {
+
+                                    Image(
+                                        systemName:
+                                            "wand.and.stars"
+                                    )
+                                }
+
+                                Text(
+                                    isGeneratingStamp
+                                    ? "Membuat..."
+                                    : "Buat Prangko"
+                                )
+                            }
                             .font(
                                 .system(
-                                    size: 23,
-                                    weight: .regular
+                                    size: 15,
+                                    weight: .medium
                                 )
                             )
-                            .foregroundStyle(
-                                Color(
-                                    red: 0.40,
-                                    green: 0.40,
-                                    blue: 0.42
-                                )
+                            .foregroundStyle(.white)
+                            .padding(
+                                .horizontal,
+                                12
                             )
+                            .padding(
+                                .vertical,
+                                8
+                            )
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        Color(
+                                            red: 0.04,
+                                            green: 0.12,
+                                            blue: 0.45
+                                        )
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(
+                            message
+                                .trimmingCharacters(
+                                    in: .whitespacesAndNewlines
+                                )
+                                .isEmpty
+                            ||
+                            isGeneratingStamp
+                        )
                     }
-                    .frame(
-                        width: 125,
-                        height: 125
-                    )
                 }
                 .padding(
                     .top,
@@ -462,6 +642,162 @@ struct WritePostcardView: View {
         )
     }
 
+    // MARK: - Generate Stamp
+
+    @available(iOS 26.0, *)
+    private func generateStamp() {
+
+        let cleanedMessage =
+            message.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard !cleanedMessage.isEmpty else {
+
+            stampError =
+                "Tulis pesan terlebih dahulu."
+
+            return
+        }
+
+        let model =
+            SystemLanguageModel.default
+
+        // MARK: Foundation Models availability
+
+        switch model.availability {
+
+        case .available:
+
+            break
+
+        case .unavailable(
+            .appleIntelligenceNotEnabled
+        ):
+
+            aiUnavailableMessage = """
+            Apple Intelligence belum aktif.
+
+            Aktifkan Apple Intelligence
+            melalui Settings → Apple Intelligence & Siri.
+            """
+
+            return
+
+        case .unavailable(
+            .deviceNotEligible
+        ):
+
+            aiUnavailableMessage = """
+            Perangkat ini tidak mendukung
+            Apple Intelligence.
+            """
+
+            return
+
+        case .unavailable(
+            .modelNotReady
+        ):
+
+            aiUnavailableMessage = """
+            Model AI belum siap.
+
+            Tunggu sampai model selesai
+            diunduh lalu coba lagi.
+            """
+
+            return
+
+        case .unavailable:
+
+            aiUnavailableMessage = """
+            Apple Intelligence belum tersedia.
+            """
+
+            return
+        }
+
+        // MARK: Start generation
+
+        isGeneratingStamp = true
+
+        aiUnavailableMessage = nil
+
+        stampError = nil
+
+        Task { @MainActor in
+
+            do {
+
+                // =====================================
+                // STEP 1
+                // FOUNDATION MODELS
+                // =====================================
+
+                print("================================")
+                print("🧠 FOUNDATION MODELS")
+                print("================================")
+
+                let promptService =
+                    StampPromptService()
+
+                let visualPrompt =
+                    try await promptService.generatePrompt(
+                        from: cleanedMessage
+                    )
+
+                print("✅ Generated visual prompt:")
+                print(visualPrompt)
+
+                // =====================================
+                // STEP 2
+                // IMAGE CREATOR
+                //
+                // NO PLAYGROUND UI
+                // =====================================
+
+                print("================================")
+                print("🎨 IMAGE CREATOR")
+                print("================================")
+
+                let imageGenerator =
+                    StampImageGenerator()
+
+                let image =
+                    try await imageGenerator.generateImage(
+                        prompt: visualPrompt
+                    )
+
+                // =====================================
+                // STEP 3
+                // DISPLAY RESULT
+                // =====================================
+
+                generatedStamp = image
+
+                print("================================")
+                print("✅ STAMP COMPLETE")
+                print("================================")
+
+                isGeneratingStamp = false
+
+            } catch {
+
+                print("================================")
+                print("❌ STAMP GENERATION FAILED")
+                print("================================")
+
+                print(error)
+                print(error.localizedDescription)
+
+                stampError =
+                    error.localizedDescription
+
+                isGeneratingStamp = false
+            }
+        }
+    }
+
     // MARK: - Send Button
 
     private var sendButton: some View {
@@ -521,10 +857,13 @@ struct WritePostcardView: View {
 
     private var currentDate: String {
 
-        let formatter = DateFormatter()
+        let formatter =
+            DateFormatter()
 
         formatter.locale =
-            Locale(identifier: "id_ID")
+            Locale(
+                identifier: "id_ID"
+            )
 
         formatter.dateFormat =
             "dd MMMM yyyy"
@@ -552,6 +891,11 @@ struct WritePostcardView: View {
             "Sending postcard:",
             message
         )
+
+        print(
+            "Stamp exists:",
+            generatedStamp != nil
+        )
     }
 }
 
@@ -574,7 +918,9 @@ struct CameraViewControllerWrapper:
 
             DispatchQueue.main.async {
 
-                onImageSelected(image)
+                onImageSelected(
+                    image
+                )
             }
         }
 
@@ -585,6 +931,7 @@ struct CameraViewControllerWrapper:
         _ uiViewController: CameraViewController,
         context: Context
     ) {
+
         // Nothing needed
     }
 }
@@ -592,5 +939,6 @@ struct CameraViewControllerWrapper:
 // MARK: - Preview
 
 #Preview {
+
     WritePostcardView()
 }
