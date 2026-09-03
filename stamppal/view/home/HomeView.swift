@@ -11,14 +11,21 @@ import SwiftData
 
 struct HomeView: View {
 
-    // MARK: - Postcards from SwiftData
+    // MARK: - SwiftData
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext)
+    private var modelContext
+
     @Query(
         sort: \Postcard.id,
         order: .reverse
     )
-    private var postcards: [Postcard]
+    private var storedPostcards: [Postcard]
+
+    // MARK: - UI State
+
+    @State private var displayedPostcards: [Postcard] = []
+    @State private var isSyncing = true
 
     // MARK: - Body
 
@@ -30,20 +37,25 @@ struct HomeView: View {
 
                 ZStack {
 
-                    // MARK: - Background
+                    // MARK: Background
 
                     PostCardBackgroundView()
 
-                    // MARK: - Postcard Stack
+                    // MARK: Content
 
-                    if postcards.isEmpty {
+                    if isSyncing {
+
+                        ProgressView()
+                            .controlSize(.large)
+
+                    } else if displayedPostcards.isEmpty {
 
                         emptyState
 
                     } else {
 
                         PostcardStack(
-                            postcards: postcards
+                            postcards: displayedPostcards
                         )
                         .frame(
                             width: geometry.size.width,
@@ -51,7 +63,7 @@ struct HomeView: View {
                         )
                     }
 
-                    // MARK: - Help Button
+                    // MARK: Help Button
 
                     VStack {
 
@@ -65,14 +77,8 @@ struct HomeView: View {
                                 helpTapped()
                             }
                         }
-                        .padding(
-                            .horizontal,
-                            42
-                        )
-                        .padding(
-                            .top,
-                            25
-                        )
+                        .padding(.horizontal, 42)
+                        .padding(.top, 25)
 
                         Spacer()
                     }
@@ -81,30 +87,176 @@ struct HomeView: View {
         }
         .ignoresSafeArea()
         .navigationBarBackButtonHidden()
+
+
         .task {
             await syncGroupPostcards()
         }
+
+
         .refreshable {
             await syncGroupPostcards()
         }
     }
 
     // MARK: - Sync Group Postcards
+
+    @MainActor
     private func syncGroupPostcards() async {
-        guard let groupCode = AuthenticationManager.shared.activeGroupCode, !groupCode.isEmpty else { return }
+
+        isSyncing = true
+
+        let groupCode =
+            AuthenticationManager.shared.activeGroupCode
+
+        print("================================")
+        print("☁️ HOME CLOUDKIT SYNC")
+        print("================================")
+
+        print(
+            "Active group code: \(groupCode ?? "NIL")"
+        )
+
+        // MARK: No Group
+
+        guard let groupCode,
+              !groupCode.isEmpty else {
+
+            print("❌ NO ACTIVE GROUP CODE")
+
+            displayedPostcards = storedPostcards
+
+            isSyncing = false
+
+            return
+        }
+
         do {
-            let remoteCards = try await CloudKitGroupService.shared.fetchGroupPostcards(groupCode: groupCode)
-            await MainActor.run {
-                for card in remoteCards {
-                    let exists = postcards.contains(where: { $0.id == card.id })
-                    if !exists {
-                        modelContext.insert(card)
-                    }
-                }
-                try? modelContext.save()
+
+            // MARK: Fetch CloudKit
+
+            print("☁️ Fetching GroupPostcard...")
+            print("☁️ Group code: \(groupCode)")
+
+            let remoteCards =
+                try await CloudKitGroupService.shared
+                    .fetchGroupPostcards(
+                        groupCode: groupCode
+                    )
+
+            print(
+                "✅ CloudKit returned \(remoteCards.count) postcards"
+            )
+
+            // MARK: Print Results
+
+            for card in remoteCards {
+
+                print(
+                    "☁️ Postcard ID:",
+                    card.id.uuidString
+                )
+
+                print(
+                    "Sender:",
+                    card.sender
+                )
+
+                print(
+                    "Recipient:",
+                    card.recipient ?? "nil"
+                )
+
+                print(
+                    "Message:",
+                    card.message
+                )
+
+                print(
+                    "Date:",
+                    card.date
+                )
+
+                print(
+                    "Group:",
+                    card.groupCode ?? "nil"
+                )
+
+                print("-------------------------")
             }
+
+            // MARK: Put CloudKit Cards Directly Into UI State
+
+            displayedPostcards = remoteCards
+
+            print(
+                "📱 UI postcards:",
+                displayedPostcards.count
+            )
+
+            // MARK: Save To SwiftData
+
+            for remoteCard in remoteCards {
+
+                let alreadyExists =
+                    storedPostcards.contains {
+                        $0.id == remoteCard.id
+                    }
+
+                if alreadyExists {
+
+                    print(
+                        "✓ Already exists:",
+                        remoteCard.id.uuidString
+                    )
+
+                } else {
+
+                    print(
+                        "➕ Inserting postcard:",
+                        remoteCard.id.uuidString
+                    )
+
+                    modelContext.insert(remoteCard)
+                }
+            }
+
+            do {
+
+                try modelContext.save()
+
+                print("✅ SwiftData saved")
+
+            } catch {
+
+                print(
+                    "❌ SwiftData save failed:",
+                    error.localizedDescription
+                )
+            }
+
+            // IMPORTANT:
+            // The UI is already populated from remoteCards.
+            // We don't need to wait for @Query to update.
+
+            isSyncing = false
+
         } catch {
-            print("ℹ️ Sync group postcards: \(error.localizedDescription)")
+
+            print("❌ CloudKit fetch failed:")
+            print(error)
+
+            print(
+                "Localized:",
+                error.localizedDescription
+            )
+
+            // If CloudKit fails, show whatever is
+            // already stored locally.
+
+            displayedPostcards = storedPostcards
+
+            isSyncing = false
         }
     }
 
@@ -112,40 +264,69 @@ struct HomeView: View {
 
     private var emptyState: some View {
 
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
 
-            Image(systemName: "envelope")
-                .font(.system(size: 55))
-                .foregroundStyle(.gray)
+            VStack(spacing: 8) {
 
-            Text("Belum ada kartu pos")
+                Text(
+                    "Kamu belum mendapatkan postcard"
+                )
                 .font(
                     .system(
-                        size: 28,
-                        weight: .semibold
+                        size: 34,
+                        weight: .bold
                     )
                 )
                 .foregroundStyle(.black)
+                .multilineTextAlignment(.center)
 
-            Text("Kartu pos yang kamu terima akan muncul di sini.")
+                Text(
+                    "Tunggu hingga ada yang mengirimkan postcard"
+                )
                 .font(
                     .system(
-                        size: 18,
-                        weight: .regular
+                        size: 26,
+                        weight: .semibold
                     )
                 )
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 40)
+            .padding(.top, 45)
+
+            Spacer()
+
+            Image("emptyPostcard")
+                .resizable()
+                .scaledToFit()
+                .frame(
+                    width: 300,
+                    height: 300
+                )
+
+            Spacer()
         }
-        .padding(.horizontal, UIDevice.isPad ? 80 : 32)
-        .padding(.vertical, UIDevice.isPad ? 80 : 36)
-        .frame(maxWidth: UIDevice.isPad ? 500 : 320)
-        .background {
-            Color.white
-        }
-        .clipShape(RoundedRectangle(cornerRadius: UIDevice.isPad ? 30 : 20))
-        .padding(.horizontal, UIDevice.isPad ? 40 : 20)
-        .shadow(radius: 16)
+        .frame(
+            width: min(
+                UIScreen.main.bounds.width * 0.62,
+                1100
+            ),
+            height: 600
+        )
+        .background(Color.white)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: 28,
+                style: .continuous
+            )
+        )
+        .shadow(
+            color: .black.opacity(0.15),
+            radius: 16,
+            x: 0,
+            y: 8
+        )
     }
 
     // MARK: - Actions
