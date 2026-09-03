@@ -13,7 +13,7 @@ final class PostcardCloudKitService {
     static let shared = PostcardCloudKitService()
 
     private var container: CKContainer {
-        CKContainer.default()
+        CKContainer(identifier: "iCloud.com.academy.challenge5.stamppal")
     }
 
     private var privateDatabase: CKDatabase {

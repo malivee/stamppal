@@ -29,7 +29,7 @@ struct stamppalApp: App {
                             }
                         },
                         onCreate: {
-                            selectedTab = 1
+                            selectedTab = 0
                             withAnimation(.easeInOut(duration: 0.35)) {
                                 hasCompletedOnboarding = true
                             }

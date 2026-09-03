@@ -12,10 +12,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ProfileView: View {
 
     @ObservedObject private var authManager = AuthenticationManager.shared
+    @Environment(\.modelContext) private var modelContext
+    @Query private var postcards: [Postcard]
+    
     @State private var isEmailRevealed: Bool = false
     @State private var isCodeCopied: Bool = false
     @State private var showingCreateGroupSheet: Bool = false
@@ -266,6 +270,18 @@ struct ProfileView: View {
                         ) {
                             Task {
                                 await authManager.performSilentAuthentication()
+                                if let groupCode = authManager.activeGroupCode, !groupCode.isEmpty {
+                                    if let remoteCards = try? await CloudKitGroupService.shared.fetchGroupPostcards(groupCode: groupCode) {
+                                        await MainActor.run {
+                                            for card in remoteCards {
+                                                if !postcards.contains(where: { $0.id == card.id }) {
+                                                    modelContext.insert(card)
+                                                }
+                                            }
+                                            try? modelContext.save()
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

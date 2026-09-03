@@ -95,16 +95,23 @@ struct NewUserRegistrationSheet: View {
                                         .foregroundColor(Color(red: 0.04, green: 0.12, blue: 0.45))
                                         .frame(width: 20)
                                     
-                                    TextField("contoh: Silalahi Klery", text: $inputDisplayName)
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.black)
-                                        .tint(.black)
-                                        .autocorrectionDisabled()
+                                    ZStack(alignment: .leading) {
+                                        if inputDisplayName.isEmpty {
+                                            Text("contoh: Budi Santoso")
+                                                .font(.system(size: 15, weight: .regular))
+                                                .foregroundColor(Color(red: 0.38, green: 0.44, blue: 0.54))
+                                        }
+                                        TextField("", text: $inputDisplayName)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(.black)
+                                            .tint(.black)
+                                            .autocorrectionDisabled()
+                                    }
                                 }
                                 .padding(14)
                                 .background(Color.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.35), lineWidth: 1))
                                 
                                 Text("Nama ini akan tercetak sebagai pengirim di setiap kartu pos yang kamu kirim.")
                                     .font(.system(size: 11))
@@ -138,20 +145,26 @@ struct NewUserRegistrationSheet: View {
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(Color(red: 0.04, green: 0.12, blue: 0.45))
                                     
-                                    TextField("contoh: silalahiklery", text: $inputUsername)
-                                        .font(.system(size: 15, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.black)
-                                        .tint(.black)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                        .onChange(of: inputUsername) { _, newValue in
-                                            // Hapus spasi secara instan saat pengguna mengetik
-                                            let clean = newValue.replacingOccurrences(of: " ", with: "").lowercased()
-                                            if clean != newValue {
-                                                inputUsername = clean
-                                            }
-                                            checkAvailabilityDebounced(clean)
+                                    ZStack(alignment: .leading) {
+                                        if inputUsername.isEmpty {
+                                            Text("contoh: sahabat_pena")
+                                                .font(.system(size: 15, weight: .regular, design: .monospaced))
+                                                .foregroundColor(Color(red: 0.38, green: 0.44, blue: 0.54))
                                         }
+                                        TextField("", text: $inputUsername)
+                                            .font(.system(size: 15, weight: .medium, design: .monospaced))
+                                            .foregroundColor(.black)
+                                            .tint(.black)
+                                            .textInputAutocapitalization(.never)
+                                            .autocorrectionDisabled()
+                                            .onChange(of: inputUsername) { _, newValue in
+                                                let clean = newValue.replacingOccurrences(of: " ", with: "").lowercased()
+                                                if clean != newValue {
+                                                    inputUsername = clean
+                                                }
+                                                checkAvailabilityDebounced(clean)
+                                            }
+                                    }
                                 }
                                 .padding(14)
                                 .background(Color.white)

@@ -3,10 +3,8 @@
 //  stamppal
 //
 //  Manajer autentikasi CloudKit Silent Authentication & Pengelolaan Akun Pengguna.
-//  Struktur data akun:
-//  - Nama Tampilan (Display Name, boleh spasi)
-//  - User ID / Username (Ketat, tanpa spasi, unik)
-//  Tanpa Sign in with Apple standar & tanpa batasan umur.
+//  Menggunakan kontainer eksplisit "iCloud.com.academy.challenge5.stamppal"
+//  dan pencarian record langsung via primary key untuk keandalan maksimal di TestFlight.
 //
 
 import Foundation
@@ -17,6 +15,9 @@ import CloudKit
 final class AuthenticationManager: ObservableObject {
     
     static let shared = AuthenticationManager()
+    
+    // Identitas kontainer resmi
+    static let containerIdentifier = "iCloud.com.academy.challenge5.stamppal"
     
     // MARK: - Published State
     @Published var isCloudKitConnected: Bool = false
@@ -31,9 +32,9 @@ final class AuthenticationManager: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
-    // Lazy container accessor
+    // Kontainer eksplisit
     private var container: CKContainer {
-        CKContainer.default()
+        CKContainer(identifier: Self.containerIdentifier)
     }
     
     private var publicDatabase: CKDatabase {
@@ -73,7 +74,6 @@ final class AuthenticationManager: ObservableObject {
             self.birthDate = savedBirth
         }
         
-        // Tandai perlu registrasi profil jika username masih kosong
         if self.username.isEmpty {
             self.needsProfileRegistration = true
         }
@@ -104,6 +104,16 @@ final class AuthenticationManager: ObservableObject {
         let clean = Self.sanitizeUsername(candidate)
         guard Self.isValidUsername(clean) else { return false }
         
+        // 1. Cek Primary Key record user_username
+        let candidateRecordID = CKRecord.ID(recordName: "user_\(clean)")
+        if let record = try? await publicDatabase.record(for: candidateRecordID) {
+            let owner = record["userRecordName"] as? String ?? ""
+            if owner != self.userRecordID && !self.userRecordID.isEmpty {
+                return false
+            }
+        }
+        
+        // 2. Cek via Query fallback
         do {
             let predicate = NSPredicate(format: "username == %@", clean)
             let query = CKQuery(recordType: "UserProfile", predicate: predicate)
@@ -119,7 +129,6 @@ final class AuthenticationManager: ObservableObject {
             }
             return true
         } catch {
-            print("ℹ️ Cek duplikasi User ID: \(error.localizedDescription)")
             return true
         }
     }
@@ -136,20 +145,25 @@ final class AuthenticationManager: ObservableObject {
             throw NSError(domain: "StampPal", code: 409, userInfo: [NSLocalizedDescriptionKey: "User ID '@\(cleanUsername)' sudah dipakai oleh orang lain."])
         }
         
+        let recordID = CKRecord.ID(recordName: "user_\(cleanUsername)")
+        let record = CKRecord(recordType: "UserProfile", recordID: recordID)
+        
+        record["userRecordName"] = (userRecordID.isEmpty ? cleanUsername : userRecordID) as CKRecordValue
+        record["username"] = cleanUsername as CKRecordValue
+        record["displayName"] = (displayName.isEmpty ? cleanUsername : displayName) as CKRecordValue
+        if let group = activeGroupCode {
+            record["activeGroupCode"] = group as CKRecordValue
+        }
+        
         do {
-            let recordID = CKRecord.ID(recordName: "user_\(userRecordID.isEmpty ? UUID().uuidString : userRecordID)")
-            let record = CKRecord(recordType: "UserProfile", recordID: recordID)
-            
-            record["userRecordName"] = (userRecordID.isEmpty ? recordID.recordName : userRecordID) as CKRecordValue
-            record["username"] = cleanUsername as CKRecordValue
-            record["displayName"] = (displayName.isEmpty ? cleanUsername : displayName) as CKRecordValue
-            if let group = activeGroupCode {
-                record["activeGroupCode"] = group as CKRecordValue
-            }
-            
             _ = try await publicDatabase.save(record)
+            print("☁️ [CloudKit] Profil @\(cleanUsername) berhasil disimpan ke server Apple!")
         } catch {
-            print("ℹ️ CloudKit save profile info: \(error.localizedDescription)")
+            print("⚠️ [CloudKit] Simpan profil ke server gagal: \(error.localizedDescription)")
+            // Lempar error jika gagal autentikasi iCloud
+            if let ckError = error as? CKError, ckError.code == .notAuthenticated {
+                throw NSError(domain: "StampPal", code: 401, userInfo: [NSLocalizedDescriptionKey: CloudKitGroupService.humanFriendlyError(error)])
+            }
         }
         
         await MainActor.run {
@@ -157,11 +171,10 @@ final class AuthenticationManager: ObservableObject {
             self.displayName = displayName.isEmpty ? cleanUsername : displayName
             self.needsProfileRegistration = false
             self.saveToLocalStorage()
-            print("✅ [StampPal] Akun baru berhasil dibuat: @\(cleanUsername) (\(self.displayName))")
+            print("✅ [StampPal] Akun baru aktif: @\(cleanUsername) (\(self.displayName))")
         }
     }
     
-    // Backward compatibility overload
     func registerUserProfile(username: String, displayName: String, birthDate: Date) async throws {
         try await registerUserProfile(username: username, displayName: displayName)
     }
@@ -224,6 +237,24 @@ final class AuthenticationManager: ObservableObject {
     }
     
     private func fetchUserProfileFromCloudKit(userRecordName: String) async throws -> UserProfile? {
+        // Coba ambil via primary key user_<username> jika username tersimpan
+        if !self.username.isEmpty {
+            let directID = CKRecord.ID(recordName: "user_\(self.username)")
+            if let record = try? await publicDatabase.record(for: directID) {
+                if let uname = record["username"] as? String,
+                   let dname = record["displayName"] as? String {
+                    let groupCode = record["activeGroupCode"] as? String
+                    return UserProfile(
+                        userRecordName: userRecordName,
+                        username: uname,
+                        displayName: dname,
+                        birthDate: self.birthDate,
+                        activeGroupCode: groupCode
+                    )
+                }
+            }
+        }
+        
         let predicate = NSPredicate(format: "userRecordName == %@", userRecordName)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
@@ -253,20 +284,16 @@ final class AuthenticationManager: ObservableObject {
         self.activeGroupCode = code
         saveToLocalStorage()
         
-        guard !userRecordID.isEmpty, let code = code else { return }
+        guard !username.isEmpty, let code = code else { return }
         Task {
             do {
-                let predicate = NSPredicate(format: "userRecordName == %@", self.userRecordID)
-                let query = CKQuery(recordType: "UserProfile", predicate: predicate)
-                let result = try await self.publicDatabase.records(matching: query)
-                for (_, matchResult) in result.matchResults {
-                    if let record = try? matchResult.get() {
-                        record["activeGroupCode"] = code as CKRecordValue
-                        _ = try await self.publicDatabase.save(record)
-                    }
+                let directID = CKRecord.ID(recordName: "user_\(username)")
+                if let record = try? await self.publicDatabase.record(for: directID) {
+                    record["activeGroupCode"] = code as CKRecordValue
+                    _ = try await self.publicDatabase.save(record)
                 }
             } catch {
-                print("ℹ️ Update group in profile error: \(error.localizedDescription)")
+                print("ℹ️ Update active group in profile: \(error.localizedDescription)")
             }
         }
     }
