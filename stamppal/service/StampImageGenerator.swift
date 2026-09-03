@@ -21,6 +21,7 @@ final class StampImageGenerator {
         print("================================")
         print("🎨 IMAGE GENERATION STARTED")
         print("================================")
+
         print("📝 Prompt:")
         print(cleanedPrompt)
 
@@ -31,6 +32,7 @@ final class StampImageGenerator {
         let availableStyles = creator.availableStyles
 
         print("🎨 Available styles:")
+
         for style in availableStyles {
             print("   \(style)")
         }
@@ -85,8 +87,10 @@ final class StampImageGenerator {
             print("================================")
             print("❌ IMAGE GENERATION FAILED")
             print("================================")
+
             print("Error:")
             print(error)
+
             print("Localized:")
             print(error.localizedDescription)
 

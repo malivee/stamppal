@@ -10,12 +10,6 @@ import UIKit
 
 struct HomeView: View {
 
-    // MARK: - Navigation State
-
-    @State private var isOpeningCamera = false
-    @State private var isWritingPostcard = false
-    @State private var capturedImage: UIImage?
-
     // MARK: - Sample Postcards
 
     private let postcards: [Postcard] = [
@@ -76,11 +70,11 @@ struct HomeView: View {
 
                 ZStack {
 
-                    // MARK: Background
+                    // MARK: - Background
 
                     PostCardBackgroundView()
 
-                    // MARK: Postcard Stack
+                    // MARK: - Postcard Stack
 
                     PostcardStack(
                         postcards: postcards
@@ -90,22 +84,16 @@ struct HomeView: View {
                         height: geometry.size.height
                     )
 
-                    // MARK: Top Buttons
+                    // MARK: - Help Button
 
                     VStack {
 
                         HStack {
 
-                            CircleIconButton(
-                                icon: "archivebox.fill"
-                            ) {
-                                archiveTapped()
-                            }
-
                             Spacer()
 
                             CircleIconButton(
-                                icon: "questionmark"
+                                icon: "questionmark",
                             ) {
                                 helpTapped()
                             }
@@ -121,102 +109,6 @@ struct HomeView: View {
 
                         Spacer()
                     }
-
-                    // MARK: Compose Button
-
-                    VStack {
-
-                        Spacer()
-
-                        HStack {
-
-                            Spacer()
-
-                            Button {
-
-                                composeTapped()
-
-                            } label: {
-
-                                Image(
-                                    systemName: "pencil"
-                                )
-                                .font(
-                                    .system(
-                                        size: 28,
-                                        weight: .medium
-                                    )
-                                )
-                                .foregroundStyle(.white)
-                                .frame(
-                                    width: 82,
-                                    height: 82
-                                )
-                                .background(
-                                    Circle()
-                                        .fill(
-                                            Color(
-                                                red: 0.04,
-                                                green: 0.12,
-                                                blue: 0.45
-                                            )
-                                        )
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .shadow(
-                                color: .black.opacity(0.20),
-                                radius: 9,
-                                x: 0,
-                                y: 5
-                            )
-                        }
-                        .padding(
-                            .horizontal,
-                            50
-                        )
-                        .padding(
-                            .bottom,
-                            25
-                        )
-                    }
-                }
-
-                // MARK: - Camera
-
-                .fullScreenCover(
-                    isPresented: $isOpeningCamera
-                ) {
-
-                    CameraViewControllerWrapper { image in
-
-                        capturedImage = image
-
-                        // Close camera first.
-                        isOpeningCamera = false
-
-                        // Wait for the camera presentation to finish
-                        // before opening the postcard writing page.
-                        DispatchQueue.main.asyncAfter(
-                            deadline: .now() + 0.2
-                        ) {
-
-                            isWritingPostcard = true
-                        }
-                    }
-                    .ignoresSafeArea()
-                }
-
-                // MARK: - Write Postcard
-
-                .navigationDestination(
-                    isPresented: $isWritingPostcard
-                ) {
-
-                    WritePostcardView(
-                        image: capturedImage
-                    )
-                    .navigationBarBackButtonHidden()
                 }
             }
         }
@@ -226,26 +118,18 @@ struct HomeView: View {
 
     // MARK: - Actions
 
-    private func archiveTapped() {
-
-        print("Archive tapped")
-    }
-
     private func helpTapped() {
 
         print("Help tapped")
-    }
-
-    private func composeTapped() {
-
-        capturedImage = nil
-
-        isOpeningCamera = true
     }
 }
 
 // MARK: - Preview
 
 #Preview {
+
     HomeView()
+        .previewInterfaceOrientation(
+            .landscapeLeft
+        )
 }

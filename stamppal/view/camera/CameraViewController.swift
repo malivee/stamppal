@@ -31,7 +31,6 @@ final class CameraViewController: UIViewController {
 
     // MARK: - UI
 
-    private let closeButton = UIButton(type: .system)
     private let captureButton = UIButton(type: .system)
     private let switchCameraButton = UIButton(type: .system)
     private let galleryButton = UIButton(type: .system)
@@ -84,29 +83,6 @@ final class CameraViewController: UIViewController {
 
     private func setupUI() {
 
-        // ==================================================
-        // CLOSE BUTTON
-        // ==================================================
-
-        closeButton.setImage(
-            UIImage(systemName: "xmark"),
-            for: .normal
-        )
-
-        closeButton.tintColor = .white
-
-        closeButton.backgroundColor =
-            UIColor.black.withAlphaComponent(0.35)
-
-        closeButton.layer.cornerRadius = 24
-
-        closeButton.addTarget(
-            self,
-            action: #selector(closeTapped),
-            for: .touchUpInside
-        )
-
-        view.addSubview(closeButton)
 
         // ==================================================
         // CAPTURE BUTTON
@@ -189,16 +165,7 @@ final class CameraViewController: UIViewController {
         let width = view.bounds.width
         let height = view.bounds.height
 
-        // ==================================================
-        // CLOSE
-        // ==================================================
-
-        closeButton.frame = CGRect(
-            x: 24,
-            y: 24,
-            width: 48,
-            height: 48
-        )
+    
 
         // ==================================================
         // CAPTURE
@@ -624,36 +591,44 @@ final class CameraViewController: UIViewController {
             return
         }
 
-        guard let currentInput =
-                currentCameraInput
-        else {
+        guard let currentInput = currentCameraInput else {
             return
         }
 
+
         // ==================================================
-        // DETERMINE NEW CAMERA
+        // DETERMINE NEW CAMERA POSITION
         // ==================================================
 
-        let newPosition:
-            AVCaptureDevice.Position =
+        let newPosition: AVCaptureDevice.Position =
             currentCameraPosition == .back
             ? .front
             : .back
 
+
+        // ==================================================
+        // FIND NEW CAMERA
+        // ==================================================
+
         guard let newCamera =
-                AVCaptureDevice.default(
-                    .builtInWideAngleCamera,
-                    for: .video,
-                    position: newPosition
-                )
+            AVCaptureDevice.default(
+                .builtInWideAngleCamera,
+                for: .video,
+                position: newPosition
+            )
         else {
 
             print(
-                "Unable to find other camera."
+                "Unable to find \(newPosition) camera."
             )
 
             return
         }
+
+
+        // ==================================================
+        // CREATE NEW INPUT
+        // ==================================================
 
         do {
 
@@ -662,34 +637,38 @@ final class CameraViewController: UIViewController {
                     device: newCamera
                 )
 
+
+            // ==================================================
+            // CHANGE CAMERA INPUT
+            // ==================================================
+
             captureSession.beginConfiguration()
 
-            defer {
-                captureSession.commitConfiguration()
-            }
-
-            // ==================================================
-            // CHECK INPUT
-            // ==================================================
+            captureSession.removeInput(
+                currentInput
+            )
 
             guard captureSession.canAddInput(
                 newInput
             ) else {
 
+                // Restore previous camera if possible
+                if captureSession.canAddInput(
+                    currentInput
+                ) {
+                    captureSession.addInput(
+                        currentInput
+                    )
+                }
+
+                captureSession.commitConfiguration()
+
                 print(
-                    "Unable to add new camera input."
+                    "Unable to add \(newPosition) camera input."
                 )
 
                 return
             }
-
-            // ==================================================
-            // CHANGE INPUT
-            // ==================================================
-
-            captureSession.removeInput(
-                currentInput
-            )
 
             captureSession.addInput(
                 newInput
@@ -701,24 +680,35 @@ final class CameraViewController: UIViewController {
             currentCameraPosition =
                 newPosition
 
+            captureSession.commitConfiguration()
+
+
             // ==================================================
-            // UPDATE ORIENTATION
+            // UPDATE PREVIEW + PHOTO ORIENTATION
             // ==================================================
 
             DispatchQueue.main.async { [weak self] in
 
-                self?.updateCameraOrientation()
+                guard let self else {
+                    return
+                }
+
+                self.updateCameraOrientation()
             }
+
+
+            print(
+                "✅ Switched to \(newPosition) camera"
+            )
 
         } catch {
 
             print(
-                "Switch camera error:",
+                "❌ Switch camera error:",
                 error.localizedDescription
             )
         }
     }
-
     // MARK: - Gallery
 
     @objc

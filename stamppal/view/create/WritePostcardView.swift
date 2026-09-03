@@ -76,9 +76,8 @@ struct WritePostcardView: View {
             }
         }
 
-        .ignoresSafeArea()
-
         .navigationBarBackButtonHidden()
+        .toolbar(.hidden, for: .tabBar)
 
         // MARK: Camera
 
