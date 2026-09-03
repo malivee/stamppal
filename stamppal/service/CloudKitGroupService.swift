@@ -241,6 +241,16 @@ final class CloudKitGroupService {
             record["stampAsset"] = CKAsset(fileURL: tempURL)
         }
         
+        print("================================")
+        print("📤 CLOUDKIT SEND DEBUG")
+        print("================================")
+        print("Record Type:", record.recordType)
+        print("Record ID:", record.recordID.recordName)
+        print("groupCode:", record["groupCode"] as? String ?? "NIL")
+        print("sender:", record["sender"] as? String ?? "NIL")
+        print("recipient:", record["recipient"] as? String ?? "NIL")
+        print("================================")
+        
         // 1. Simpan Record Kartu Pos ke Public Database
         _ = try await publicDatabase.save(record)
         print("☁️ [CloudKit] Record kartu pos '\(postcardRecordName)' berhasil diunggah!")

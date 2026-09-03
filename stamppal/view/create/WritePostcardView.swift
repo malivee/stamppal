@@ -4,7 +4,7 @@ import FoundationModels
 import SwiftData
 
 struct WritePostcardView: View {
-    
+
     @Environment(\.modelContext)
     private var modelContext
 
@@ -12,20 +12,19 @@ struct WritePostcardView: View {
 
     @State private var selectedImage: UIImage?
 
+    @Binding var selectedTab: Int
+
     @State private var aiUnavailableMessage: String?
 
     // MARK: - Text
 
     @State private var recipient = "Andrea Rodriguez"
-
     @State private var message = ""
 
     // MARK: - Stamp
 
     @State private var generatedStamp: UIImage?
-
     @State private var isGeneratingStamp = false
-
     @State private var stampError: String?
 
     // MARK: - Navigation
@@ -37,11 +36,15 @@ struct WritePostcardView: View {
 
     // MARK: - Initializer
 
-    init(image: UIImage? = nil) {
-
+    init(
+        image: UIImage? = nil,
+        selectedTab: Binding<Int>
+    ) {
         _selectedImage = State(
             initialValue: image
         )
+
+        _selectedTab = selectedTab
     }
 
     // MARK: - Body
@@ -52,6 +55,8 @@ struct WritePostcardView: View {
 
             ZStack {
 
+                // MARK: Background
+
                 background
 
                 VStack(spacing: 0) {
@@ -59,9 +64,17 @@ struct WritePostcardView: View {
                     // MARK: Header
 
                     header
-                        .padding(.top, UIDevice.isPad ? 10 : 4)
+                        .padding(
+                            .top,
+                            UIDevice.isPad ? 10 : 4
+                        )
 
-                    Spacer(minLength: UIDevice.isPad ? 25 : 10)
+                    Spacer(
+                        minLength:
+                            UIDevice.isPad
+                            ? 25
+                            : 10
+                    )
 
                     // MARK: Postcard
 
@@ -69,20 +82,49 @@ struct WritePostcardView: View {
                         geometry: geometry
                     )
 
-                    Spacer(minLength: UIDevice.isPad ? 35 : 12)
+                    Spacer(
+                        minLength:
+                            UIDevice.isPad
+                            ? 35
+                            : 12
+                    )
 
                     // MARK: Send Button
 
-                    sendButton
+                    HStack(spacing: 0) {
 
-                    Spacer(minLength: UIDevice.isPad ? 25 : 8)
+                        Spacer()
+
+                        sendButton
+                            .frame(
+                                width:
+                                    geometry.size.width
+                                    * 0.61
+                            )
+                    }
+
+                    Spacer(
+                        minLength:
+                            UIDevice.isPad
+                            ? 25
+                            : 8
+                    )
                 }
-                .padding(.horizontal, UIDevice.isPad ? 42 : 14)
+                .padding(
+                    .horizontal,
+                    UIDevice.isPad
+                    ? 42
+                    : 14
+                )
             }
         }
 
         .navigationBarBackButtonHidden()
-        .toolbar(.hidden, for: .tabBar)
+
+        .toolbar(
+            .hidden,
+            for: .tabBar
+        )
 
         // MARK: Camera
 
@@ -93,7 +135,6 @@ struct WritePostcardView: View {
             CameraViewControllerWrapper { image in
 
                 selectedImage = image
-
                 isCameraPresented = false
             }
             .ignoresSafeArea()
@@ -108,7 +149,6 @@ struct WritePostcardView: View {
                     aiUnavailableMessage != nil
                 },
                 set: { newValue in
-
                     if !newValue {
                         aiUnavailableMessage = nil
                     }
@@ -137,7 +177,6 @@ struct WritePostcardView: View {
                     stampError != nil
                 },
                 set: { newValue in
-
                     if !newValue {
                         stampError = nil
                     }
@@ -188,9 +227,7 @@ struct WritePostcardView: View {
                     location: 1
                 )
             ],
-
             startPoint: .top,
-
             endPoint: .bottom
         )
         .ignoresSafeArea()
@@ -202,8 +239,13 @@ struct WritePostcardView: View {
 
         HStack {
 
+            // -------------------------------------------------
+            // HOME
+            // -------------------------------------------------
+
             Button {
 
+                selectedTab = 0
                 dismiss()
 
             } label: {
@@ -213,14 +255,23 @@ struct WritePostcardView: View {
                 )
                 .font(
                     .system(
-                        size: UIDevice.isPad ? 30 : 18,
+                        size:
+                            UIDevice.isPad
+                            ? 30
+                            : 18,
                         weight: .medium
                     )
                 )
                 .foregroundStyle(.black)
                 .frame(
-                    width: UIDevice.isPad ? 68 : 42,
-                    height: UIDevice.isPad ? 68 : 42
+                    width:
+                        UIDevice.isPad
+                        ? 68
+                        : 42,
+                    height:
+                        UIDevice.isPad
+                        ? 68
+                        : 42
                 )
                 .background(
                     Circle()
@@ -240,12 +291,19 @@ struct WritePostcardView: View {
 
             Spacer()
 
+            // -------------------------------------------------
+            // TITLE
+            // -------------------------------------------------
+
             VStack(spacing: 2) {
 
-                Text("Tulis Kartu Pos")
+                Text("Tulis Postcard")
                     .font(
                         .system(
-                            size: UIDevice.isPad ? 40 : 22,
+                            size:
+                                UIDevice.isPad
+                                ? 40
+                                : 22,
                             weight: .bold
                         )
                     )
@@ -258,7 +316,10 @@ struct WritePostcardView: View {
                 )
                 .font(
                     .system(
-                        size: UIDevice.isPad ? 24 : 12,
+                        size:
+                            UIDevice.isPad
+                            ? 24
+                            : 12,
                         weight: .medium
                     )
                 )
@@ -269,6 +330,10 @@ struct WritePostcardView: View {
 
             Spacer()
 
+            // -------------------------------------------------
+            // HELP
+            // -------------------------------------------------
+
             Button {
 
                 helpTapped()
@@ -278,14 +343,23 @@ struct WritePostcardView: View {
                 Text("?")
                     .font(
                         .system(
-                            size: UIDevice.isPad ? 30 : 18,
+                            size:
+                                UIDevice.isPad
+                                ? 30
+                                : 18,
                             weight: .medium
                         )
                     )
                     .foregroundStyle(.black)
                     .frame(
-                        width: UIDevice.isPad ? 68 : 42,
-                        height: UIDevice.isPad ? 68 : 42
+                        width:
+                            UIDevice.isPad
+                            ? 68
+                            : 42,
+                        height:
+                            UIDevice.isPad
+                            ? 68
+                            : 42
                     )
                     .background(
                         Circle()
@@ -311,9 +385,13 @@ struct WritePostcardView: View {
         geometry: GeometryProxy
     ) -> some View {
 
-        HStack(spacing: 0) {
+        HStack(
+            spacing: 0
+        ) {
 
-            // MARK: Image
+            // =================================================
+            // IMAGE
+            // =================================================
 
             ZStack {
 
@@ -335,7 +413,9 @@ struct WritePostcardView: View {
                 }
             }
             .frame(
-                width: geometry.size.width * 0.39
+                width:
+                    geometry.size.width
+                    * 0.39
             )
             .frame(
                 maxHeight: .infinity
@@ -343,12 +423,17 @@ struct WritePostcardView: View {
             .clipped()
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: 14,
+                    cornerRadius:
+                        UIDevice.isPad
+                        ? 16
+                        : 12,
                     style: .continuous
                 )
             )
 
-            // MARK: Camera Button
+            // =================================================
+            // CAMERA BUTTON
+            // =================================================
 
             .overlay(
                 alignment: .bottom
@@ -361,18 +446,28 @@ struct WritePostcardView: View {
                 } label: {
 
                     Image(
-                        systemName: "camera.fill"
+                        systemName:
+                            "camera.fill"
                     )
                     .font(
                         .system(
-                            size: UIDevice.isPad ? 25 : 16,
+                            size:
+                                UIDevice.isPad
+                                ? 25
+                                : 16,
                             weight: .medium
                         )
                     )
                     .foregroundStyle(.black)
                     .frame(
-                        width: UIDevice.isPad ? 82 : 46,
-                        height: UIDevice.isPad ? 82 : 46
+                        width:
+                            UIDevice.isPad
+                            ? 82
+                            : 46,
+                        height:
+                            UIDevice.isPad
+                            ? 82
+                            : 46
                     )
                     .background(
                         Circle()
@@ -382,47 +477,158 @@ struct WritePostcardView: View {
                         Circle()
                             .stroke(
                                 Color.gray.opacity(0.35),
-                                lineWidth: UIDevice.isPad ? 4 : 2.5
+                                lineWidth:
+                                    UIDevice.isPad
+                                    ? 4
+                                    : 2.5
                             )
                     )
                 }
                 .buttonStyle(.plain)
-                .offset(y: UIDevice.isPad ? 5 : 2)
+                .offset(
+                    y:
+                       -10
+                )
             }
 
-            // MARK: Writing Area
+            // =================================================
+            // WRITING AREA
+            // =================================================
 
             VStack(
                 alignment: .leading,
                 spacing: 0
             ) {
 
-                // MARK: Recipient / Date / Stamp
+                // -------------------------------------------------
+                // RECIPIENT / DATE / STAMP
+                // -------------------------------------------------
 
-                HStack {
+                HStack(
+                    alignment: .top
+                ) {
+
+                    // ---------------------------------------------
+                    // RECIPIENT
+                    // ---------------------------------------------
 
                     VStack(
                         alignment: .leading,
-                        spacing: 4
+                        spacing:
+                            UIDevice.isPad
+                            ? 6
+                            : 4
                     ) {
 
-                        Text(
-                            "Kepada : \(recipient)"
-                        )
-                        .font(
-                            .system(
-                                size: UIDevice.isPad ? 25 : 14,
-                                weight: .medium
+                        HStack(
+                            spacing:
+                                UIDevice.isPad
+                                ? 8
+                                : 5
+                        ) {
+
+                            // Recipient avatar
+                            Circle()
+                                .fill(
+                                    Color(
+                                        red: 0.78,
+                                        green: 0.63,
+                                        blue: 0.43
+                                    )
+                                )
+                                .frame(
+                                    width:
+                                        UIDevice.isPad
+                                        ? 24
+                                        : 18,
+                                    height:
+                                        UIDevice.isPad
+                                        ? 24
+                                        : 18
+                                )
+
+                            Text(
+                                recipient.isEmpty
+                                ? "Pilih penerima"
+                                : recipient
                             )
+                            .font(
+                                .system(
+                                    size:
+                                        UIDevice.isPad
+                                        ? 23
+                                        : 14,
+                                    weight: .medium
+                                )
+                            )
+                            .foregroundStyle(
+                                recipient.isEmpty
+                                ? .gray
+                                : .black
+                            )
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                            // X
+                            if !recipient.isEmpty {
+
+                                Button {
+
+                                    recipient = ""
+
+                                } label: {
+
+                                    Image(
+                                        systemName:
+                                            "xmark"
+                                    )
+                                    .font(
+                                        .system(
+                                            size:
+                                                UIDevice.isPad
+                                                ? 14
+                                                : 10,
+                                            weight: .semibold
+                                        )
+                                    )
+                                    .foregroundStyle(
+                                        .black.opacity(0.75)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(
+                            .horizontal,
+                            UIDevice.isPad
+                            ? 10
+                            : 7
                         )
-                        .foregroundStyle(.black)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .padding(
+                            .vertical,
+                            UIDevice.isPad
+                            ? 5
+                            : 3
+                        )
+                        .background(
+                            Capsule()
+                                .fill(.white)
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    Color.black.opacity(0.25),
+                                    lineWidth: 1
+                                )
+                        )
 
                         Text(currentDate)
                             .font(
                                 .system(
-                                    size: UIDevice.isPad ? 20 : 11,
+                                    size:
+                                        UIDevice.isPad
+                                        ? 20
+                                        : 11,
                                     weight: .regular
                                 )
                             )
@@ -433,16 +639,28 @@ struct WritePostcardView: View {
 
                     Spacer()
 
-                    // MARK: AI Stamp
+                    // ---------------------------------------------
+                    // AI STAMP
+                    // ---------------------------------------------
 
-                    VStack(spacing: UIDevice.isPad ? 8 : 4) {
+                    VStack(
+                        spacing:
+                            UIDevice.isPad
+                            ? 8
+                            : 4
+                    ) {
 
                         ZStack {
+
+                            // -------------------------------------
+                            // STAMP IMAGE
+                            // -------------------------------------
 
                             if let generatedStamp {
 
                                 Image(
-                                    uiImage: generatedStamp
+                                    uiImage:
+                                        generatedStamp
                                 )
                                 .resizable()
                                 .scaledToFill()
@@ -462,7 +680,10 @@ struct WritePostcardView: View {
                                 Text("Prangko")
                                     .font(
                                         .system(
-                                            size: UIDevice.isPad ? 23 : 13,
+                                            size:
+                                                UIDevice.isPad
+                                                ? 23
+                                                : 13,
                                             weight: .regular
                                         )
                                     )
@@ -475,7 +696,9 @@ struct WritePostcardView: View {
                                     )
                             }
 
-                            // Loading overlay
+                            // -------------------------------------
+                            // GENERATING OVERLAY
+                            // -------------------------------------
 
                             if isGeneratingStamp {
 
@@ -488,12 +711,19 @@ struct WritePostcardView: View {
 
                                     ProgressView()
                                         .tint(.white)
-                                        .scaleEffect(UIDevice.isPad ? 1.2 : 0.8)
+                                        .scaleEffect(
+                                            UIDevice.isPad
+                                            ? 1.2
+                                            : 0.8
+                                        )
 
                                     Text("Membuat...")
                                         .font(
                                             .system(
-                                                size: UIDevice.isPad ? 14 : 10,
+                                                size:
+                                                    UIDevice.isPad
+                                                    ? 14
+                                                    : 10,
                                                 weight: .medium
                                             )
                                         )
@@ -502,10 +732,20 @@ struct WritePostcardView: View {
                             }
                         }
                         .frame(
-                            width: UIDevice.isPad ? 125 : 72,
-                            height: UIDevice.isPad ? 125 : 72
+                            width:
+                                UIDevice.isPad
+                                ? 125
+                                : 72,
+                            height:
+                                UIDevice.isPad
+                                ? 125
+                                : 72
                         )
                         .clipShape(Rectangle())
+
+                        // -----------------------------------------
+                        // GENERATE BUTTON
+                        // -----------------------------------------
 
                         Button {
 
@@ -513,13 +753,22 @@ struct WritePostcardView: View {
 
                         } label: {
 
-                            HStack(spacing: UIDevice.isPad ? 6 : 4) {
+                            HStack(
+                                spacing:
+                                    UIDevice.isPad
+                                    ? 6
+                                    : 4
+                            ) {
 
                                 if isGeneratingStamp {
 
                                     ProgressView()
                                         .tint(.white)
-                                        .scaleEffect(UIDevice.isPad ? 1.0 : 0.75)
+                                        .scaleEffect(
+                                            UIDevice.isPad
+                                            ? 1.0
+                                            : 0.75
+                                        )
 
                                 } else {
 
@@ -527,7 +776,14 @@ struct WritePostcardView: View {
                                         systemName:
                                             "wand.and.stars"
                                     )
-                                    .font(.system(size: UIDevice.isPad ? 14 : 10))
+                                    .font(
+                                        .system(
+                                            size:
+                                                UIDevice.isPad
+                                                ? 14
+                                                : 10
+                                        )
+                                    )
                                 }
 
                                 Text(
@@ -538,18 +794,25 @@ struct WritePostcardView: View {
                             }
                             .font(
                                 .system(
-                                    size: UIDevice.isPad ? 15 : 10,
+                                    size:
+                                        UIDevice.isPad
+                                        ? 15
+                                        : 10,
                                     weight: .medium
                                 )
                             )
                             .foregroundStyle(.white)
                             .padding(
                                 .horizontal,
-                                UIDevice.isPad ? 12 : 8
+                                UIDevice.isPad
+                                ? 12
+                                : 8
                             )
                             .padding(
                                 .vertical,
-                                UIDevice.isPad ? 8 : 4
+                                UIDevice.isPad
+                                ? 8
+                                : 4
                             )
                             .background(
                                 Capsule()
@@ -566,7 +829,8 @@ struct WritePostcardView: View {
                         .disabled(
                             message
                                 .trimmingCharacters(
-                                    in: .whitespacesAndNewlines
+                                    in:
+                                        .whitespacesAndNewlines
                                 )
                                 .isEmpty
                             ||
@@ -576,23 +840,32 @@ struct WritePostcardView: View {
                 }
                 .padding(
                     .top,
-                    UIDevice.isPad ? 32 : 12
+                    UIDevice.isPad
+                    ? 26
+                    : 12
                 )
                 .padding(
                     .horizontal,
-                    UIDevice.isPad ? 30 : 12
+                    UIDevice.isPad
+                    ? 30
+                    : 12
                 )
 
                 Spacer()
 
-                // MARK: Message
+                // =================================================
+                // MESSAGE
+                // =================================================
 
                 TextEditor(
                     text: $message
                 )
                 .font(
                     .system(
-                        size: UIDevice.isPad ? 23 : 13,
+                        size:
+                            UIDevice.isPad
+                            ? 23
+                            : 13,
                         weight: .regular
                     )
                 )
@@ -607,24 +880,39 @@ struct WritePostcardView: View {
                     if message.isEmpty {
 
                         Text(
-                            "Type here to write a message"
+                            "Tulis pesan di sini"
                         )
                         .font(
                             .system(
-                                size: UIDevice.isPad ? 23 : 13,
+                                size:
+                                    UIDevice.isPad
+                                    ? 23
+                                    : 13,
                                 weight: .regular
                             )
                         )
                         .italic()
-                        .foregroundStyle(.black)
+                        .foregroundStyle(
+                            .gray.opacity(0.7)
+                        )
                         .allowsHitTesting(false)
-                        .padding(.top, UIDevice.isPad ? 8 : 4)
-                        .padding(.leading, 5)
+                        .padding(
+                            .top,
+                            UIDevice.isPad
+                            ? 8
+                            : 4
+                        )
+                        .padding(
+                            .leading,
+                            5
+                        )
                     }
                 }
                 .padding(
                     .horizontal,
-                    UIDevice.isPad ? 30 : 12
+                    UIDevice.isPad
+                    ? 30
+                    : 12
                 )
                 .frame(
                     maxWidth: .infinity,
@@ -638,21 +926,41 @@ struct WritePostcardView: View {
                 maxHeight: .infinity
             )
         }
+
+        // ---------------------------------------------------------
+        // POSTCARD HEIGHT
+        // ---------------------------------------------------------
+
         .frame(
-            height: geometry.size.height * (UIDevice.isPad ? 0.60 : 0.64)
+            height:
+                geometry.size.height
+                * (
+                    UIDevice.isPad
+                    ? 0.64
+                    : 0.66
+                )
         )
         .background(.white)
         .clipShape(
             RoundedRectangle(
-                cornerRadius: UIDevice.isPad ? 14 : 10,
+                cornerRadius:
+                    UIDevice.isPad
+                    ? 16
+                    : 12,
                 style: .continuous
             )
         )
         .shadow(
             color: .black.opacity(0.16),
-            radius: UIDevice.isPad ? 10 : 6,
+            radius:
+                UIDevice.isPad
+                ? 10
+                : 6,
             x: 0,
-            y: UIDevice.isPad ? 6 : 3
+            y:
+                UIDevice.isPad
+                ? 6
+                : 3
         )
     }
 
@@ -682,7 +990,6 @@ struct WritePostcardView: View {
         switch model.availability {
 
         case .available:
-
             break
 
         case .unavailable(
@@ -734,9 +1041,7 @@ struct WritePostcardView: View {
         // MARK: Start generation
 
         isGeneratingStamp = true
-
         aiUnavailableMessage = nil
-
         stampError = nil
 
         Task { @MainActor in
@@ -760,14 +1065,14 @@ struct WritePostcardView: View {
                         from: cleanedMessage
                     )
 
-                print("✅ Generated visual prompt:")
+                print(
+                    "✅ Generated visual prompt:"
+                )
                 print(visualPrompt)
 
                 // =====================================
                 // STEP 2
                 // IMAGE CREATOR
-                //
-                // NO PLAYGROUND UI
                 // =====================================
 
                 print("================================")
@@ -802,7 +1107,9 @@ struct WritePostcardView: View {
                 print("================================")
 
                 print(error)
-                print(error.localizedDescription)
+                print(
+                    error.localizedDescription
+                )
 
                 stampError =
                     error.localizedDescription
@@ -822,24 +1129,36 @@ struct WritePostcardView: View {
 
         } label: {
 
-            HStack(spacing: UIDevice.isPad ? 12 : 8) {
+            HStack(
+                spacing:
+                    UIDevice.isPad
+                    ? 12
+                    : 8
+            ) {
 
                 Spacer()
 
-                Text("Kirim Kartu Pos")
+                Text("Kirim Postcard")
                     .font(
                         .system(
-                            size: UIDevice.isPad ? 34 : 18,
+                            size:
+                                UIDevice.isPad
+                                ? 34
+                                : 18,
                             weight: .medium
                         )
                     )
 
                 Image(
-                    systemName: "paperplane.fill"
+                    systemName:
+                        "paperplane.fill"
                 )
                 .font(
                     .system(
-                        size: UIDevice.isPad ? 30 : 16,
+                        size:
+                            UIDevice.isPad
+                            ? 30
+                            : 16,
                         weight: .medium
                     )
                 )
@@ -848,7 +1167,10 @@ struct WritePostcardView: View {
             }
             .foregroundStyle(.white)
             .frame(
-                height: UIDevice.isPad ? 68 : 46
+                height:
+                    UIDevice.isPad
+                    ? 68
+                    : 46
             )
             .background(
                 Color(
@@ -859,7 +1181,10 @@ struct WritePostcardView: View {
             )
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: UIDevice.isPad ? 22 : 14,
+                    cornerRadius:
+                        UIDevice.isPad
+                        ? 22
+                        : 14,
                     style: .continuous
                 )
             )
@@ -901,69 +1226,120 @@ struct WritePostcardView: View {
 
     private func sendPostcard() {
 
-        let trimmedMessage = message.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
+        let trimmedMessage =
+            message.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
 
         guard !trimmedMessage.isEmpty else {
             return
         }
 
         // Convert captured image to JPEG data
-        let imageData = selectedImage?.jpegData(
-            compressionQuality: 0.85
-        )
+
+        let imageData =
+            selectedImage?.jpegData(
+                compressionQuality: 0.85
+            )
 
         // Convert generated stamp to JPEG data
-        let stampData = generatedStamp?.jpegData(
-            compressionQuality: 0.85
-        )
 
-        let auth = AuthenticationManager.shared
-        let senderName = auth.displayName.isEmpty ? (auth.username.isEmpty ? "User" : "@\(auth.username)") : auth.displayName
-        let activeGroup = auth.activeGroupCode
-        let targetRecipient = (activeGroup != nil && !activeGroup!.isEmpty) ? "Semua Anggota (\(activeGroup!))" : recipient
+        let stampData =
+            generatedStamp?.jpegData(
+                compressionQuality: 0.85
+            )
 
-        let postcard = Postcard(
-            imageData: imageData,
-            sender: senderName,
-            recipient: targetRecipient,
-            date: currentDate,
-            message: trimmedMessage,
-            stampData: stampData,
-            groupCode: activeGroup,
-            senderUsername: auth.username,
-            senderDisplayName: auth.displayName
-        )
+        let auth =
+            AuthenticationManager.shared
+
+        let senderName =
+            auth.displayName.isEmpty
+            ? (
+                auth.username.isEmpty
+                ? "User"
+                : "@\(auth.username)"
+            )
+            : auth.displayName
+
+        let activeGroup =
+            auth.activeGroupCode
+
+        let targetRecipient =
+            (
+                activeGroup != nil
+                && !activeGroup!.isEmpty
+            )
+            ? "Semua Anggota (\(activeGroup!))"
+            : recipient
+
+        let postcard =
+            Postcard(
+                imageData: imageData,
+                sender: senderName,
+                recipient: targetRecipient,
+                date: currentDate,
+                message: trimmedMessage,
+                stampData: stampData,
+                groupCode: activeGroup,
+                senderUsername: auth.username,
+                senderDisplayName: auth.displayName
+            )
 
         // Save to SwiftData locally
-        modelContext.insert(postcard)
+
+        modelContext.insert(
+            postcard
+        )
 
         do {
-            try modelContext.save()
-            print("✅ Postcard saved locally with ID: \(postcard.id)")
 
-            // Broadcast ke CloudKit group jika terhubung ke grup
-            if let groupCode = activeGroup, !groupCode.isEmpty {
+            try modelContext.save()
+
+            print(
+                "✅ Postcard saved locally with ID: \(postcard.id)"
+            )
+
+            // Broadcast ke CloudKit group
+            // jika terhubung ke grup
+
+            if let groupCode = activeGroup,
+               !groupCode.isEmpty {
+
                 Task {
+
                     do {
-                        try await CloudKitGroupService.shared.sendPostcardToGroup(
-                            postcard: postcard,
-                            imageData: imageData,
-                            stampData: stampData
+
+                        try await CloudKitGroupService.shared
+                            .sendPostcardToGroup(
+                                postcard: postcard,
+                                imageData: imageData,
+                                stampData: stampData
+                            )
+
+                        print(
+                            "📡 [CloudKit] Postcard berhasil dibroadcast ke seluruh anggota grup \(groupCode)"
                         )
-                        print("📡 [CloudKit] Postcard berhasil dibroadcast ke seluruh anggota grup \(groupCode)")
+
                     } catch {
-                        print("⚠️ [CloudKit] Gagal broadcast postcard ke grup: \(error.localizedDescription)")
+
+                        print(
+                            "⚠️ [CloudKit] Gagal broadcast postcard ke grup: \(error.localizedDescription)"
+                        )
                     }
                 }
             }
 
+            selectedTab = 0
             dismiss()
+
         } catch {
-            print("❌ Failed to save postcard: \(error.localizedDescription)")
+
+            print(
+                "❌ Failed to save postcard: \(error.localizedDescription)"
+            )
         }
-    }}
+    }
+}
 
 // MARK: - Camera Wrapper
 
@@ -1006,5 +1382,7 @@ struct CameraViewControllerWrapper:
 
 #Preview {
 
-    WritePostcardView()
+    WritePostcardView(
+        selectedTab: .constant(0)
+    )
 }

@@ -14,6 +14,7 @@ struct CameraView: View {
 
     @State private var capturedImage: UIImage?
     @State private var showWritePostcard = false
+    @Binding var selectedTab: Int
 
     var body: some View {
 
@@ -37,6 +38,7 @@ struct CameraView: View {
 
                 WritePostcardView(
                     image: capturedImage
+                    ,selectedTab: $selectedTab
                 )
                 .navigationBarBackButtonHidden()
                 .toolbar(.hidden, for: .tabBar)
@@ -49,7 +51,7 @@ struct CameraView: View {
 
 #Preview {
 
-    CameraView()
+    CameraView(selectedTab: .constant(0))
         .previewInterfaceOrientation(
             .landscapeLeft
         )

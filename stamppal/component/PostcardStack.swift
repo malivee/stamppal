@@ -10,6 +10,8 @@ import SwiftUI
 struct PostcardStack: View {
     
     let postcards: [Postcard]
+    var onCardSwiped: ((Postcard) -> Void)?
+
     
     @State private var currentIndex = 0
     @State private var dragOffset: CGSize = .zero
@@ -234,6 +236,8 @@ struct PostcardStack: View {
                 
                 if verticalMovement <
                     -swipeThreshold {
+                    let swipedCard = postcards[currentIndex]
+                    onCardSwiped?(swipedCard)
                     
                     moveToNext()
                     

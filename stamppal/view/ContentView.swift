@@ -1,19 +1,12 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var internalTab: Int = 0
-    private var externalTab: Binding<Int>?
-    
-    init(selectedTab: Binding<Int>? = nil) {
-        self.externalTab = selectedTab
-    }
-    
-    private var activeTabBinding: Binding<Int> {
-        externalTab ?? $internalTab
-    }
+
+    @Binding var selectedTab: Int
 
     var body: some View {
-        TabView(selection: activeTabBinding) {
+
+        TabView(selection: $selectedTab) {
 
             // MARK: - Home
             HomeView()
@@ -26,7 +19,7 @@ struct ContentView: View {
                 .tag(0)
 
             // MARK: - Camera
-            CameraView()
+            CameraView(selectedTab: $selectedTab)
                 .tabItem {
                     Label(
                         "Create",
@@ -34,7 +27,6 @@ struct ContentView: View {
                     )
                 }
                 .tag(1)
-
 
             // MARK: - Inbox
             InboxView()
@@ -60,8 +52,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
-        .previewInterfaceOrientation(
-            .landscapeLeft
-        )
+    ContentView(selectedTab: .constant(0))
+        .previewInterfaceOrientation(.landscapeLeft)
 }

@@ -44,18 +44,15 @@ struct HomeView: View {
                     // MARK: Content
 
                     if isSyncing {
-
-                        ProgressView()
-                            .controlSize(.large)
-
+                        loadingState
                     } else if displayedPostcards.isEmpty {
-
                         emptyState
-
                     } else {
-
                         PostcardStack(
-                            postcards: displayedPostcards
+                            postcards: displayedPostcards,
+                            onCardSwiped: { postcard in
+                                markAsRead(postcard)
+                            }
                         )
                         .frame(
                             width: geometry.size.width,
@@ -98,6 +95,30 @@ struct HomeView: View {
             await syncGroupPostcards()
         }
     }
+    
+    //MARK: markAsRead
+    @MainActor
+    private func markAsRead(_ postcard: Postcard) {
+
+        print("📖 Marking postcard as read:")
+        print(postcard.id.uuidString)
+
+        postcard.isRead = true
+
+        displayedPostcards.removeAll {
+            $0.id == postcard.id
+        }
+
+        do {
+            try modelContext.save()
+            print("✅ Postcard marked as read")
+        } catch {
+            print(
+                "❌ Failed to save read state:",
+                error.localizedDescription
+            )
+        }
+    }
 
     // MARK: - Sync Group Postcards
 
@@ -117,26 +138,35 @@ struct HomeView: View {
             "Active group code: \(groupCode ?? "NIL")"
         )
 
-        // MARK: No Group
-
-        guard let groupCode,
-              !groupCode.isEmpty else {
+        guard
+            let groupCode,
+            !groupCode.isEmpty
+        else {
 
             print("❌ NO ACTIVE GROUP CODE")
 
-            displayedPostcards = storedPostcards
+            displayedPostcards =
+                storedPostcards.filter {
+                    !$0.isRead
+                }
 
             isSyncing = false
-
             return
         }
 
         do {
 
-            // MARK: Fetch CloudKit
+            // -------------------------------------------------
+            // FETCH FROM CLOUDKIT
+            // -------------------------------------------------
 
-            print("☁️ Fetching GroupPostcard...")
-            print("☁️ Group code: \(groupCode)")
+            print(
+                "☁️ Fetching GroupPostcard..."
+            )
+
+            print(
+                "☁️ Group code: \(groupCode)"
+            )
 
             let remoteCards =
                 try await CloudKitGroupService.shared
@@ -145,121 +175,187 @@ struct HomeView: View {
                     )
 
             print(
-                "✅ CloudKit returned \(remoteCards.count) postcards"
+                "📥 CloudKit returned \(remoteCards.count) postcards"
             )
 
-            // MARK: Print Results
+            // -------------------------------------------------
+            // FETCH CURRENT SWIFTDATA DIRECTLY
+            //
+            // Do NOT rely on @Query here.
+            // -------------------------------------------------
 
-            for card in remoteCards {
+            let descriptor =
+                FetchDescriptor<Postcard>()
 
-                print(
-                    "☁️ Postcard ID:",
-                    card.id.uuidString
+            let localCards =
+                try modelContext.fetch(
+                    descriptor
                 )
-
-                print(
-                    "Sender:",
-                    card.sender
-                )
-
-                print(
-                    "Recipient:",
-                    card.recipient ?? "nil"
-                )
-
-                print(
-                    "Message:",
-                    card.message
-                )
-
-                print(
-                    "Date:",
-                    card.date
-                )
-
-                print(
-                    "Group:",
-                    card.groupCode ?? "nil"
-                )
-
-                print("-------------------------")
-            }
-
-            // MARK: Put CloudKit Cards Directly Into UI State
-
-            displayedPostcards = remoteCards
 
             print(
-                "📱 UI postcards:",
-                displayedPostcards.count
+                "💾 SwiftData currently has \(localCards.count) postcards"
             )
 
-            // MARK: Save To SwiftData
+            // -------------------------------------------------
+            // INSERT ONLY CARDS THAT DON'T EXIST
+            // -------------------------------------------------
 
             for remoteCard in remoteCards {
 
-                let alreadyExists =
-                    storedPostcards.contains {
-                        $0.id == remoteCard.id
-                    }
-
-                if alreadyExists {
+                if let existingCard =
+                    localCards.first(
+                        where: {
+                            $0.id == remoteCard.id
+                        }
+                    ) {
 
                     print(
-                        "✓ Already exists:",
-                        remoteCard.id.uuidString
+                        "✓ Already exists: \(existingCard.id.uuidString)"
+                    )
+
+                    print(
+                        "   isRead = \(existingCard.isRead)"
                     )
 
                 } else {
 
                     print(
-                        "➕ Inserting postcard:",
-                        remoteCard.id.uuidString
+                        "➕ Inserting postcard: \(remoteCard.id.uuidString)"
                     )
 
-                    modelContext.insert(remoteCard)
+                    // New postcard starts unread.
+                    remoteCard.isRead = false
+
+                    modelContext.insert(
+                        remoteCard
+                    )
                 }
             }
 
-            do {
+            // -------------------------------------------------
+            // SAVE
+            // -------------------------------------------------
+
+            if modelContext.hasChanges {
 
                 try modelContext.save()
 
-                print("✅ SwiftData saved")
-
-            } catch {
-
                 print(
-                    "❌ SwiftData save failed:",
-                    error.localizedDescription
+                    "✅ SwiftData save complete"
                 )
             }
 
-            // IMPORTANT:
-            // The UI is already populated from remoteCards.
-            // We don't need to wait for @Query to update.
+            // -------------------------------------------------
+            // FETCH AGAIN AFTER SAVE
+            //
+            // This is important.
+            // We now get the actual persisted objects,
+            // including their local isRead values.
+            // -------------------------------------------------
+
+            let updatedLocalCards =
+                try modelContext.fetch(
+                    FetchDescriptor<Postcard>(
+                        sortBy: [
+                            SortDescriptor(
+                                \Postcard.id,
+                                order: .reverse
+                            )
+                        ]
+                    )
+                )
+
+            // -------------------------------------------------
+            // BUILD HOME
+            //
+            // Home only shows unread cards.
+            // -------------------------------------------------
+
+            displayedPostcards =
+                updatedLocalCards.filter {
+                    !$0.isRead
+                }
+
+            print(
+                "📱 Unread postcards shown: \(displayedPostcards.count)"
+            )
+
+            // Debug every card.
+            for card in updatedLocalCards {
+
+                print(
+                    "📮 \(card.id.uuidString) | isRead = \(card.isRead)"
+                )
+            }
 
             isSyncing = false
 
         } catch {
 
-            print("❌ CloudKit fetch failed:")
-            print(error)
+            print(
+                "❌ HOME CLOUDKIT SYNC FAILED"
+            )
+
+            print(
+                error
+            )
 
             print(
                 "Localized:",
                 error.localizedDescription
             )
 
-            // If CloudKit fails, show whatever is
-            // already stored locally.
+            // -------------------------------------------------
+            // FALLBACK TO LOCAL DATA
+            // -------------------------------------------------
 
-            displayedPostcards = storedPostcards
+            do {
+
+                let localCards =
+                    try modelContext.fetch(
+                        FetchDescriptor<Postcard>(
+                            sortBy: [
+                                SortDescriptor(
+                                    \Postcard.id,
+                                    order: .reverse
+                                )
+                            ]
+                        )
+                    )
+
+                displayedPostcards =
+                    localCards.filter {
+                        !$0.isRead
+                    }
+
+            } catch {
+
+                displayedPostcards = []
+
+                print(
+                    "❌ Failed to fetch local postcards:",
+                    error.localizedDescription
+                )
+            }
 
             isSyncing = false
         }
     }
+    
+    // MARK: - Loading State
 
+    private var loadingState: some View {
+        VStack(spacing: 24) {
+            ProgressView()
+                .controlSize(.large)
+                .scaleEffect(1.5)
+                .foregroundStyle(.blue)
+        }
+    
+
+
+    }
+    
     // MARK: - Empty State
 
     private var emptyState: some View {
