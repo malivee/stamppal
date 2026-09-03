@@ -133,14 +133,21 @@ struct CreateGroupSheet: View {
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(Color(red: 0.15, green: 0.20, blue: 0.30))
                                     
-                                    TextField("contoh: Keluarga Klery", text: $groupName)
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.black)
-                                        .tint(.black)
-                                        .padding(14)
-                                        .background(Color.white)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                                    ZStack(alignment: .leading) {
+                                        if groupName.isEmpty {
+                                            Text("contoh: Keluarga Cemara")
+                                                .font(.system(size: 15, weight: .regular))
+                                                .foregroundColor(Color(red: 0.38, green: 0.44, blue: 0.54))
+                                        }
+                                        TextField("", text: $groupName)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(.black)
+                                            .tint(.black)
+                                    }
+                                    .padding(14)
+                                    .background(Color.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.35), lineWidth: 1))
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -163,20 +170,27 @@ struct CreateGroupSheet: View {
                                             .font(.system(size: 16, weight: .bold))
                                             .foregroundColor(.black)
                                         
-                                        TextField("contoh: keluarga_klery", text: $groupID)
-                                            .font(.system(size: 15, weight: .medium))
-                                            .foregroundColor(.black)
-                                            .tint(.black)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled(true)
-                                            .onChange(of: groupID) { _, newValue in
-                                                groupID = newValue.lowercased().replacingOccurrences(of: " ", with: "")
+                                        ZStack(alignment: .leading) {
+                                            if groupID.isEmpty {
+                                                Text("contoh: keluarga_Cemara")
+                                                    .font(.system(size: 15, weight: .regular, design: .monospaced))
+                                                    .foregroundColor(Color(red: 0.38, green: 0.44, blue: 0.54))
                                             }
+                                            TextField("", text: $groupID)
+                                                .font(.system(size: 15, weight: .medium, design: .monospaced))
+                                                .foregroundColor(.black)
+                                                .tint(.black)
+                                                .textInputAutocapitalization(.never)
+                                                .autocorrectionDisabled(true)
+                                                .onChange(of: groupID) { _, newValue in
+                                                    groupID = newValue.lowercased().replacingOccurrences(of: " ", with: "")
+                                                }
+                                        }
                                     }
                                     .padding(14)
                                     .background(Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.35), lineWidth: 1))
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -260,7 +274,7 @@ struct CreateGroupSheet: View {
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = CloudKitGroupService.humanFriendlyError(error)
                     self.isCreating = false
                 }
             }
@@ -372,20 +386,27 @@ struct JoinGroupSheet: View {
                                             .font(.system(size: 16, weight: .bold))
                                             .foregroundColor(.black)
                                         
-                                        TextField("contoh: keluarga_klery", text: $inputID)
-                                            .font(.system(size: 15, weight: .medium))
-                                            .foregroundColor(.black)
-                                            .tint(.black)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled(true)
-                                            .onChange(of: inputID) { _, newValue in
-                                                inputID = newValue.lowercased().replacingOccurrences(of: " ", with: "")
+                                        ZStack(alignment: .leading) {
+                                            if inputID.isEmpty {
+                                                Text("contoh: sahabat_sejati")
+                                                    .font(.system(size: 15, weight: .regular, design: .monospaced))
+                                                    .foregroundColor(Color(red: 0.38, green: 0.44, blue: 0.54))
                                             }
+                                            TextField("", text: $inputID)
+                                                .font(.system(size: 15, weight: .medium, design: .monospaced))
+                                                .foregroundColor(.black)
+                                                .tint(.black)
+                                                .textInputAutocapitalization(.never)
+                                                .autocorrectionDisabled(true)
+                                                .onChange(of: inputID) { _, newValue in
+                                                    inputID = newValue.lowercased().replacingOccurrences(of: " ", with: "")
+                                                }
+                                        }
                                     }
                                     .padding(14)
                                     .background(Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.35), lineWidth: 1))
                                 }
                                 .padding(.horizontal, 20)
                                 
@@ -459,7 +480,7 @@ struct JoinGroupSheet: View {
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = CloudKitGroupService.humanFriendlyError(error)
                     self.isJoining = false
                 }
             }
