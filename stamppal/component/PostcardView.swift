@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct PostcardView: View {
+
     let postcard: Postcard
 
     @State private var isFlipped = false
@@ -17,6 +19,7 @@ struct PostcardView: View {
     private let footerHeight: CGFloat = 72
 
     var body: some View {
+
         GeometryReader { geometry in
 
             let imageHeight =
@@ -62,6 +65,7 @@ struct PostcardView: View {
                 )
             )
             .onTapGesture {
+
                 withAnimation(
                     .easeInOut(duration: 0.7)
                 ) {
@@ -83,13 +87,35 @@ struct PostcardView: View {
 
         VStack(spacing: 0) {
 
-            Image(postcard.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(
-                    maxWidth: .infinity,
-                )
-                .clipped()
+            Group {
+
+                if let imageData = postcard.imageData,
+                   let uiImage = UIImage(data: imageData) {
+
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+
+                } else if let imageName = postcard.imageName {
+
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+
+                } else {
+
+                    Image("imagePlaceholder")
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .frame(
+                maxWidth: .infinity
+            )
+            .frame(
+                height: imageHeight
+            )
+            .clipped()
 
             HStack(alignment: .center) {
 
@@ -141,35 +167,114 @@ struct PostcardView: View {
         cardHeight: CGFloat
     ) -> some View {
 
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(
+            alignment: .leading,
+            spacing: 0
+        ) {
 
-            // Sender
-            VStack(alignment: .leading, spacing: 4) {
+            // MARK: Top section
 
-                Text("From : \(postcard.sender)")
-                    .font(
-                        .system(
-                            size: 22,
-                            weight: .medium
+            HStack(
+                alignment: .top
+            ) {
+
+                // Sender information
+                VStack(
+                    alignment: .leading,
+                    spacing: 4
+                ) {
+
+                    Text("From : \(postcard.sender)")
+                        .font(
+                            .system(
+                                size: 22,
+                                weight: .medium
+                            )
                         )
-                    )
-                    .foregroundStyle(.black)
+                        .foregroundStyle(.black)
 
-                Text(postcard.date)
-                    .font(
-                        .system(
-                            size: 18,
-                            weight: .regular
+                    Text(postcard.date)
+                        .font(
+                            .system(
+                                size: 18,
+                                weight: .regular
+                            )
                         )
+                        .foregroundStyle(.gray)
+                }
+
+                Spacer()
+
+                // MARK: Stamp
+
+                if let stampData = postcard.stampData,
+                   let stampImage = UIImage(data: stampData) {
+
+                    Image(uiImage: stampImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: 105,
+                            height: 105
+                        )
+                        .clipped()
+                        .overlay(
+                            Rectangle()
+                                .stroke(
+                                    .black.opacity(0.12),
+                                    lineWidth: 1
+                                )
+                        )
+
+                } else {
+
+                    // Placeholder when there is no stamp
+                    ZStack {
+
+                        Rectangle()
+                            .fill(
+                                Color(
+                                    red: 0.76,
+                                    green: 0.76,
+                                    blue: 0.79
+                                )
+                            )
+
+                        Text("Prangko")
+                            .font(
+                                .system(
+                                    size: 17,
+                                    weight: .regular
+                                )
+                            )
+                            .foregroundStyle(
+                                Color(
+                                    red: 0.40,
+                                    green: 0.40,
+                                    blue: 0.42
+                                )
+                            )
+                    }
+                    .frame(
+                        width: 105,
+                        height: 105
                     )
-                    .foregroundStyle(.gray)
+                    .overlay(
+                        Rectangle()
+                            .stroke(
+                                .black.opacity(0.12),
+                                lineWidth: 1
+                            )
+                    )
+                }
             }
             .padding(.top, 22)
             .padding(.horizontal, 48)
 
             Spacer()
 
-            // Message
+            // MARK: Message
+
             Text(postcard.message)
                 .font(
                     .system(
@@ -189,8 +294,10 @@ struct PostcardView: View {
 
             Spacer()
 
-            // Bottom hint
+            // MARK: Bottom hint
+
             HStack {
+
                 Spacer()
 
                 Text("Ketuk untuk melihat gambar")
@@ -216,6 +323,7 @@ struct PostcardView: View {
         }
         .frame(
             maxWidth: .infinity,
+            maxHeight: cardHeight
         )
         .background(.white)
         .clipShape(
@@ -234,13 +342,17 @@ struct PostcardView: View {
 }
 
 #Preview {
+
     PostcardView(
         postcard: Postcard(
             imageName: "placeholderImage",
             sender: "Andrea Rodriguez",
             date: "01 Agustus 2026",
             message: """
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Lorem ipsum dolor sit amet,
+            consectetur adipiscing elit.
+            Sed do eiusmod tempor incididunt
+            ut labore et dolore magna aliqua.
             """
         )
     )

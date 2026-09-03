@@ -1,8 +1,12 @@
 import SwiftUI
 import UIKit
 import FoundationModels
+import SwiftData
 
 struct WritePostcardView: View {
+    
+    @Environment(\.modelContext)
+    private var modelContext
 
     // MARK: - Image
 
@@ -886,17 +890,49 @@ struct WritePostcardView: View {
 
     private func sendPostcard() {
 
-        print(
-            "Sending postcard:",
-            message
+        let trimmedMessage = message.trimmingCharacters(
+            in: .whitespacesAndNewlines
         )
 
-        print(
-            "Stamp exists:",
-            generatedStamp != nil
+        guard !trimmedMessage.isEmpty else {
+            return
+        }
+
+        // Convert captured image to JPEG data
+        let imageData = selectedImage?.jpegData(
+            compressionQuality: 0.85
         )
-    }
-}
+
+        // Convert generated stamp to JPEG data
+        let stampData = generatedStamp?.jpegData(
+            compressionQuality: 0.85
+        )
+
+        let postcard = Postcard(
+            imageData: imageData,
+            sender: "User",
+            date: currentDate,
+            message: trimmedMessage,
+            stampData: stampData
+        )
+
+        // Save to SwiftData
+        modelContext.insert(postcard)
+
+        do {
+            try modelContext.save()
+
+            print("✅ Postcard saved locally")
+            print("ID:", postcard.id)
+
+            // Return after successful save
+            dismiss()
+
+        } catch {
+            print("❌ Failed to save postcard")
+            print(error.localizedDescription)
+        }
+    }}
 
 // MARK: - Camera Wrapper
 
